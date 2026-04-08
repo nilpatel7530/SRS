@@ -15,11 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $adminRole = \Modules\Roles\Models\Role::firstOrCreate(
+            ['slug' => 'admin'],
+            ['name' => 'Administrator']
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $adminUser = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin User',
+                'password' => \Illuminate\Support\Facades\Hash::make('password')
+            ]
+        );
+
+        $adminUser->roles()->syncWithoutDetaching([$adminRole->id]);
     }
 }
