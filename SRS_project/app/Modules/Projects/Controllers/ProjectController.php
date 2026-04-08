@@ -5,6 +5,7 @@ namespace Modules\Projects\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Projects\Models\Project;
+use Modules\Projects\Models\Department;
 use App\Skills\ProjectManagementSkill;
 
 class ProjectController extends Controller
@@ -22,7 +23,16 @@ class ProjectController extends Controller
     public function index()
     {
         $projects = Project::with('department')->get();
-        return view('projects.index', compact('projects'));
+        return view('admin.projects.index', compact('projects'));
+    }
+
+    /**
+     * Show the form for creating a new project.
+     */
+    public function create()
+    {
+        $departments = Department::all();
+        return view('admin.projects.create', compact('departments'));
     }
 
     /**
@@ -38,7 +48,7 @@ class ProjectController extends Controller
 
         $project = Project::create($validated);
 
-        return redirect()->back()->with('success', 'Project created successfully.');
+        return redirect()->route('projects.index')->with('success', 'Project created successfully.');
     }
 
     /**

@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Modules\Roles\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
 use Modules\Projects\Models\Project;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -19,7 +19,7 @@ use Modules\Projects\Models\Project;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * Get the attributes that should be cast.
@@ -34,23 +34,15 @@ class User extends Authenticatable
         ];
     }
 
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
-    }
+
 
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class);
     }
 
-    public function hasRole(string $roleSlug): bool
-    {
-        return $this->roles()->where('slug', $roleSlug)->exists();
-    }
-
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasRole('Admin');
     }
 }

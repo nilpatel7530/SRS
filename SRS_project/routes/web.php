@@ -8,6 +8,9 @@ Route::get('/', function () {
 
 use Modules\Admin\Controllers\DashboardController;
 use Modules\Reports\Controllers\ReportController;
+use Modules\Users\Controllers\UserController;
+use Modules\Roles\Controllers\RoleController;
+use Modules\Projects\Controllers\DepartmentController;
 
 
 
@@ -19,8 +22,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
 
     // Projects routes
-    Route::get('projects', [\Modules\Projects\Controllers\ProjectController::class, 'index'])->name('projects.index');
-    Route::get('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'show'])->name('projects.show');
+    Route::resource('projects', \Modules\Projects\Controllers\ProjectController::class);
+
+    // Departments
+    Route::resource('departments', DepartmentController::class);
+
+    // Users and Roles
+    Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class);
 });
 
 Route::view('profile', 'profile')
