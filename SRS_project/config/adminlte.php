@@ -48,7 +48,7 @@ return [
     */
 
     'google_fonts' => [
-        'allowed' => true,
+        'allowed' => false,
     ],
 
     /*
@@ -110,7 +110,7 @@ return [
     */
 
     'preloader' => [
-        'enabled' => true,
+        'enabled' => false,
         'mode' => 'fullscreen',
         'img' => [
             'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
@@ -257,7 +257,7 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => 'dashboard',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -283,8 +283,8 @@ return [
     */
 
     'laravel_asset_bundling' => false,
-    'laravel_css_path' => 'css/app.css',
-    'laravel_js_path' => 'js/app.js',
+    'laravel_css_path' => null,
+    'laravel_js_path' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -319,28 +319,53 @@ return [
             'text' => 'Dashboard',
             'url'  => 'dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
+            'can'  => 'dashboard.access',
         ],
         [
             'text' => 'Projects',
             'url'  => 'projects',
             'icon' => 'fas fa-fw fa-project-diagram',
+            'can'  => 'projects.access',
+        ],
+        [
+            'text' => 'Proposals',
+            'url'  => 'proposals',
+            'icon' => 'fas fa-fw fa-file-contract',
+            'can'  => 'proposals.access',
+        ],
+        [
+            'text' => 'Reports',
+            'url'  => 'reports',
+            'icon' => 'fas fa-fw fa-chart-bar',
+            'can'  => 'reports.access',
         ],
         [
             'text' => 'Departments',
             'url'  => 'departments',
             'icon' => 'fas fa-fw fa-building',
+            'can'  => 'departments.access',
         ],
         [
-            'header' => 'ADMINISTRATION'
+            'header' => 'ADMINISTRATION',
+            'can'    => 'administration.access',
         ],
         [
             'text' => 'Users',
             'url'  => 'users',
             'icon' => 'fas fa-fw fa-users',
+            'can'  => 'users.access',
         ],
         [
             'text' => 'Roles',
             'url'  => 'roles',
+            'icon' => 'fas fa-fw fa-user-tag',
+            'can'  => 'roles.access',
+        ],
+        [
+            'text' => 'Permissions',
+            'url'  => 'permissions',
+            'icon' => 'fas fa-fw fa-key',
+            'can'  => 'permissions.access',
         ],
     ],
     /*
@@ -495,5 +520,5 @@ return [
     |
     */
 
-    'livewire' => false,
+    'livewire' => true,
 ];

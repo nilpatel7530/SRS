@@ -12,10 +12,18 @@ class Invoice extends Model
         'project_id', 
         'vendor_invoice_no', 
         'cel_invoice_no', 
+        'vendor_total',
+        'vendor_gst',
+        'vendor_total_with_gst',
+        'cel_total',
+        'cel_gst',
+        'cel_total_with_gst',
+        'payment_received',
         'gst_amount', 
         'total_amount', 
         'status', 
-        'invoice_date'
+        'invoice_date',
+        'remarks'
     ];
 
     public function project(): BelongsTo

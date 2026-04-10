@@ -10,6 +10,32 @@ class FinancialTrackingSkill extends AbstractSkill
     protected string $description = 'Handles Capex / Opex logic, aggregation and projections.';
 
     /**
+     * Add CAPEX entry.
+     */
+    public function addCapexEntry(Project $project, array $data): \Modules\Finance\Models\CapexEntry
+    {
+        return $project->capexEntries()->create([
+            'amount' => $data['amount'],
+            'remarks' => $data['remarks'] ?? $data['description'] ?? null,
+            'completion_date' => $data['completion_date'] ?? $data['entry_date'] ?? now(),
+            'entry_date' => $data['entry_date'] ?? now(),
+        ]);
+    }
+
+    /**
+     * Add OPEX entry.
+     */
+    public function addOpexEntry(Project $project, array $data): \Modules\Finance\Models\OpexEntry
+    {
+        return $project->opexEntries()->create([
+            'amount' => $data['amount'],
+            'remarks' => $data['remarks'] ?? $data['description'] ?? null,
+            'duration' => $data['duration'] ?? null,
+            'entry_date' => $data['entry_date'] ?? now(),
+        ]);
+    }
+
+    /**
      * Calculate total capex for a project.
      */
     public function getTotalCapex(Project $project): float
@@ -32,12 +58,17 @@ class FinancialTrackingSkill extends AbstractSkill
     {
         $capex = $this->getTotalCapex($project);
         $opex = $this->getTotalOpex($project);
+        $total = $capex + $opex;
+
+        // Projections: Total + pending invoices + 10% buffers
+        $pendingInvoiceAmount = $project->invoices()->where('status', 'pending')->sum('total_amount');
         
         return [
             'total_capex' => $capex,
             'total_opex' => $opex,
-            'grand_total' => $capex + $opex,
-            'projections' => ($capex + $opex) * 1.1, // Example dummy projection
+            'grand_total' => $total,
+            'pending_invoices' => $pendingInvoiceAmount,
+            'projections' => $total + $pendingInvoiceAmount + ($total * 0.10),
         ];
     }
 }

@@ -20,7 +20,8 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        return view('admin.users.create', compact('roles'));
+        $managers = User::with('roles')->get();
+        return view('admin.users.create', compact('roles', 'managers'));
     }
 
     public function store(Request $request)
@@ -29,13 +30,15 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
-            'roles' => 'array'
+            'roles' => 'array',
+            'manager_id' => 'nullable|exists:users,id'
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
+            'manager_id' => $request->manager_id
         ]);
 
         if ($request->has('roles')) {
@@ -49,7 +52,8 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $userRoles = $user->roles->pluck('name')->toArray();
-        return view('admin.users.edit', compact('user', 'roles', 'userRoles'));
+        $managers = User::where('id', '!=', $user->id)->with('roles')->get();
+        return view('admin.users.edit', compact('user', 'roles', 'userRoles', 'managers'));
     }
 
     public function update(Request $request, User $user)
@@ -58,12 +62,14 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|min:8|confirmed',
-            'roles' => 'array'
+            'roles' => 'array',
+            'manager_id' => 'nullable|exists:users,id|different:id'
         ]);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'manager_id' => $request->manager_id,
         ];
 
         if ($request->filled('password')) {

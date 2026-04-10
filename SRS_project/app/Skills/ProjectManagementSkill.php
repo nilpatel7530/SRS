@@ -11,23 +11,72 @@ class ProjectManagementSkill extends AbstractSkill
     protected string $description = 'Handles project creation, assignment, and hierarchy mapping.';
 
     /**
+     * Create a new project.
+     */
+    public function createProject(array $data): Project
+    {
+        return Project::create($data);
+    }
+
+    /**
      * Assign a user to a project.
      */
     public function assignUser(Project $project, User $user): void
     {
-        $project->users()->attach($user->id);
+        $project->users()->syncWithoutDetaching([$user->id]);
     }
 
     /**
-     * Map project hierarchy (Recursive or simple mapping).
+     * Get the project portfolio accessible to a user.
+     * Admin: all projects.
+     * Manager/TL: their projects + projects of their subordinates.
+     * User: only assigned projects.
+     */
+    public function getUserPortfolio(User $user, array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = Project::query()->with('department');
+
+        if (!$user->isAdmin()) {
+            // Get subordinates
+            $hierarchySkill = app(RoleHierarchySkill::class);
+            $subordinateIds = $hierarchySkill->getSubordinates($user)->pluck('id');
+            
+            // User's own assigned projects OR projects assigned to subordinates
+            $query->where(function ($q) use ($user, $subordinateIds) {
+                $q->whereHas('users', function ($uq) use ($user) {
+                    $uq->where('users.id', $user->id);
+                })->orWhereHas('users', function ($uq) use ($subordinateIds) {
+                    $uq->whereIn('users.id', $subordinateIds);
+                });
+            });
+        }
+
+        // Apply filters
+        if (!empty($filters['financial_type'])) {
+            $query->where('financial_type', $filters['financial_type']);
+        }
+
+        if (!empty($filters['project_type'])) {
+            $query->where('project_type', $filters['project_type']);
+        }
+
+        return $query->paginate(15);
+    }
+
+    /**
+     * Map project hierarchy.
      */
     public function getProjectHierarchy(Project $project): array
     {
-        // Placeholder for advanced hierarchy logic
         return [
             'project' => $project->name,
             'department' => $project->department->name ?? 'None',
-            'team_members' => $project->users->pluck('name')->toArray(),
+            'team_members' => $project->users()->with('roles')->get()->map(function($user) {
+                return [
+                    'name' => $user->name,
+                    'role' => $user->getRoleNames()->first(),
+                ];
+            })->toArray(),
         ];
     }
 }

@@ -17,34 +17,42 @@
             <h3 class="card-title">Consolidated Project Report</h3>
         </div>
         <div class="card-body table-responsive p-0">
-            <table class="table table-hover text-nowrap">
+            <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>Project Name</th>
-                        <th>Department</th>
+                        <th>Types (F/P)</th>
                         <th>Total CAPEX</th>
                         <th>Total OPEX</th>
+                        <th>Invoiced</th>
+                        @foreach(array_keys(current($reportData)['month_wise'] ?? []) as $month)
+                            <th class="bg-light">{{ $month }}</th>
+                        @endforeach
+                        <th class="bg-info">Projection</th>
                         <th>BG Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($reportData as $row)
                         <tr>
-                            <td>{{ $row['project_name'] }}</td>
-                            <td>{{ $row['department'] }}</td>
-                            <td>${{ number_format($row['total_capex'], 2) }}</td>
-                            <td>${{ number_format($row['total_opex'], 2) }}</td>
+                            <td><strong>{{ $row['project_name'] }}</strong><br><small>{{ $row['department'] }}</small></td>
+                            <td>{{ $row['financial_type'] }}<br>{{ $row['project_type'] }}</td>
+                            <td>{{ number_format($row['total_capex'], 2) }}</td>
+                            <td>{{ number_format($row['total_opex'], 2) }}</td>
+                            <td>{{ number_format($row['total_invoiced'], 2) }}</td>
+                            @foreach($row['month_wise'] as $total)
+                                <td class="bg-light">{{ $total > 0 ? number_format($total, 0) : '-' }}</td>
+                            @endforeach
+                            <td class="bg-info">{{ number_format(array_sum($row['projections']), 0) }}</td>
                             <td>
-                                @if($row['bg_status'] == 'Active')
-                                    <span class="badge badge-success">Active</span>
-                                @else
-                                    <span class="badge badge-danger">Missing</span>
-                                @endif
+                                <span class="badge {{ $row['bg_status'] == 'Active' ? 'badge-success' : 'badge-danger' }}">
+                                    {{ $row['bg_status'] }}
+                                </span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center">No projects found.</td>
+                            <td colspan="10" class="text-center">No projects found for the selected criteria.</td>
                         </tr>
                     @endforelse
                 </tbody>

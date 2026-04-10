@@ -10,14 +10,16 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(\App\Services\PermissionRegistryService $registry)
     {
+        $registry->sync();
         $roles = Role::with('permissions')->get();
         return view('admin.roles.index', compact('roles'));
     }
 
-    public function create()
+    public function create(\App\Services\PermissionRegistryService $registry)
     {
+        $registry->sync();
         $permissions = Permission::all();
         return view('admin.roles.create', compact('permissions'));
     }
@@ -38,8 +40,9 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Role created successfully.');
     }
 
-    public function edit(Role $role)
+    public function edit(Role $role, \App\Services\PermissionRegistryService $registry)
     {
+        $registry->sync();
         $permissions = Permission::all();
         $rolePermissions = $role->permissions->pluck('name')->toArray();
         return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));

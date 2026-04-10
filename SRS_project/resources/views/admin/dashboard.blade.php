@@ -11,6 +11,7 @@
     
     <div class="row">
         <div class="col-lg-3 col-6">
+            <!-- small box -->
             <div class="small-box bg-info">
                 <div class="inner">
                     <h3>{{ $stats['total_projects'] }}</h3>
@@ -19,34 +20,44 @@
                 <div class="icon">
                     <i class="fas fa-project-diagram"></i>
                 </div>
-                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                <a href="{{ route('projects.index') }}" class="small-box-footer">View List <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
+        <!-- ./col -->
         <div class="col-lg-3 col-6">
+            <!-- small box -->
             <div class="small-box bg-success">
                 <div class="inner">
                     <h3>{{ $stats['budget_utilization'] }}<sup style="font-size: 20px">%</sup></h3>
                     <p>Budget Utilization</p>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-chart-pie"></i>
                 </div>
-                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                <div class="small-box-footer">
+                    Total: {{ number_format($stats['total_financials'], 0) }}
+                </div>
             </div>
         </div>
+        <!-- ./col -->
         <div class="col-lg-3 col-6">
+            <!-- small box -->
             <div class="small-box bg-warning">
                 <div class="inner">
                     <h3>{{ $stats['active_bgs'] }}</h3>
-                    <p>Active Bank Guarantees</p>
+                    <p>Active BGs ({{ $stats['expiring_bgs'] }} Expiring)</p>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-file-contract"></i>
+                    <i class="fas fa-shield-alt"></i>
                 </div>
-                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                <div class="small-box-footer">
+                    {{ $stats['expiring_bgs'] }} within 30 days
+                </div>
             </div>
         </div>
+        <!-- ./col -->
         <div class="col-lg-3 col-6">
+            <!-- small box -->
             <div class="small-box bg-danger">
                 <div class="inner">
                     <h3>{{ $stats['pending_invoices'] }}</h3>
@@ -55,9 +66,12 @@
                 <div class="icon">
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
-                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                <div class="small-box-footer">
+                    Amt: {{ number_format($stats['total_invoiced'], 0) }}
+                </div>
             </div>
         </div>
+        <!-- ./col -->
     </div>
 @stop
 

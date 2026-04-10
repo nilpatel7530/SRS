@@ -18,11 +18,13 @@ class ProjectController extends Controller
     }
 
     /**
-     * Display a listing of projects.
+     * Display a listing of projects based on user portfolio.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $projects = Project::with('department')->get();
+        $filters = $request->only(['department_id', 'type']);
+        $projects = $this->projectSkill->getUserPortfolio($request->user(), $filters);
+        
         return view('admin.projects.index', compact('projects'));
     }
 
@@ -43,10 +45,11 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'department_id' => 'required|exists:departments,id',
-            'type' => 'required|in:capex,opex,service,supply',
+            'financial_type' => 'required|in:capex,opex',
+            'project_type' => 'required|in:service,supply',
         ]);
 
-        $project = Project::create($validated);
+        $project = $this->projectSkill->createProject($validated);
 
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
     }
@@ -66,6 +69,24 @@ class ProjectController extends Controller
             'users'
         ])->findOrFail($id);
 
-        return view('admin.projects.show', compact('project'));
+        $hierarchy = $this->projectSkill->getProjectHierarchy($project);
+
+        return view('admin.projects.show', compact('project', 'hierarchy'));
+    }
+
+    /**
+     * Assign a user to the project.
+     */
+    public function assignTeam(Request $request, $id)
+    {
+        $project = Project::findOrFail($id);
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        $user = \App\Models\User::findOrFail($request->user_id);
+        $this->projectSkill->assignUser($project, $user);
+
+        return back()->with('success', 'Team member assigned successfully.');
     }
 }

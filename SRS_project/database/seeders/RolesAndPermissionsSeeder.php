@@ -22,27 +22,46 @@ class RolesAndPermissionsSeeder extends Seeder
         // create permissions
         // Permission::create(['name' => 'edit articles']);
 
-        // create roles and assign existing permissions
-        $role1 = Role::firstOrCreate(['name' => 'User']);
-
-        $role2 = Role::firstOrCreate(['name' => 'Admin']);
-        // gets all permissions via Gate::before rule; see AuthServiceProvider
+        // create roles
+        $userRole = Role::firstOrCreate(['name' => 'User']);
+        $tlRole = Role::firstOrCreate(['name' => 'TL']);
+        $managerRole = Role::firstOrCreate(['name' => 'Manager']);
+        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
 
         // create demo users
-        $user = \App\Models\User::firstOrCreate([
-            'email' => 'user@example.com'
-        ], [
-            'name' => 'Test User',
-            'password' => Hash::make('password')
-        ]);
-        $user->assignRole($role1);
-
-        $admin = \App\Models\User::firstOrCreate([
+        $admin = User::firstOrCreate([
             'email' => 'admin@example.com'
         ], [
             'name' => 'Super Admin',
             'password' => Hash::make('password')
         ]);
-        $admin->assignRole($role2);
+        $admin->assignRole($adminRole);
+
+        $manager = User::firstOrCreate([
+            'email' => 'manager@example.com'
+        ], [
+            'name' => 'Project Manager',
+            'password' => Hash::make('password'),
+            'manager_id' => $admin->id
+        ]);
+        $manager->assignRole($managerRole);
+
+        $tl = User::firstOrCreate([
+            'email' => 'tl@example.com'
+        ], [
+            'name' => 'Team Lead',
+            'password' => Hash::make('password'),
+            'manager_id' => $manager->id
+        ]);
+        $tl->assignRole($tlRole);
+
+        $user = User::firstOrCreate([
+            'email' => 'user@example.com'
+        ], [
+            'name' => 'Standard User',
+            'password' => Hash::make('password'),
+            'manager_id' => $tl->id
+        ]);
+        $user->assignRole($userRole);
     }
 }

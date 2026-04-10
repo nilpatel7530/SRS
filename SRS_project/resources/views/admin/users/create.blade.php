@@ -42,6 +42,16 @@
                         @endforeach
                     </select>
                 </div>
+
+                <div class="form-group">
+                    <label>Reporting Manager</label>
+                    <select class="form-control" name="manager_id">
+                        <option value="">-- No Manager --</option>
+                        @foreach($managers as $manager)
+                            <option value="{{ $manager->id }}">{{ $manager->name }} ({{ $manager->roles->first()->name ?? 'No Role' }})</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <div class="card-footer">

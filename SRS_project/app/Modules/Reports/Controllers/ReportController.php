@@ -38,7 +38,18 @@ class ReportController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Project Name', 'Department', 'Total CAPEX', 'Total OPEX', 'BG Status'];
+        $columns = [
+            'Project Name', 
+            'Department', 
+            'Type', 
+            'Total CAPEX', 
+            'Total OPEX', 
+            'Total Invoiced', 
+            'Pending Invoices', 
+            'BG Count', 
+            'Next BG Expiry', 
+            'Status'
+        ];
 
         $callback = function() use($reportData, $columns) {
             $file = fopen('php://output', 'w');
@@ -48,8 +59,13 @@ class ReportController extends Controller
                 fputcsv($file, [
                     $row['project_name'],
                     $row['department'],
+                    $row['type'],
                     $row['total_capex'],
                     $row['total_opex'],
+                    $row['total_invoiced'],
+                    $row['pending_invoices'],
+                    $row['bg_count'],
+                    $row['next_bg_expiry'],
                     $row['bg_status'],
                 ]);
             }

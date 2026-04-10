@@ -8,7 +8,7 @@ use Modules\Projects\Models\Project;
 
 class BankGuarantee extends Model
 {
-    protected $fillable = ['project_id', 'amount', 'type', 'validity_date', 'status'];
+    protected $fillable = ['project_id', 'amount', 'type', 'validity_date', 'status', 'bg_no', 'bg_date'];
 
     public function project(): BelongsTo
     {

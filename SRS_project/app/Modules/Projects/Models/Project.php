@@ -15,7 +15,7 @@ use Modules\Documents\Models\Document;
 
 class Project extends Model
 {
-    protected $fillable = ['name', 'department_id', 'type'];
+    protected $fillable = ['name', 'department_id', 'financial_type', 'project_type'];
 
     public function department(): BelongsTo
     {

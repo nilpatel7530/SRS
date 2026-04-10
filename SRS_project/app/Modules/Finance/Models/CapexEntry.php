@@ -8,7 +8,7 @@ use Modules\Projects\Models\Project;
 
 class CapexEntry extends Model
 {
-    protected $fillable = ['project_id', 'amount', 'description', 'entry_date'];
+    protected $fillable = ['project_id', 'amount', 'remarks', 'completion_date', 'entry_date'];
 
     public function project(): BelongsTo
     {

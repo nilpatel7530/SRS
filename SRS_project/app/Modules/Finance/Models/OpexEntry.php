@@ -8,7 +8,7 @@ use Modules\Projects\Models\Project;
 
 class OpexEntry extends Model
 {
-    protected $fillable = ['project_id', 'amount', 'description', 'entry_date'];
+    protected $fillable = ['project_id', 'amount', 'remarks', 'duration', 'entry_date'];
 
     public function project(): BelongsTo
     {
