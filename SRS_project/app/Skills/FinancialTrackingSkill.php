@@ -18,7 +18,6 @@ class FinancialTrackingSkill extends AbstractSkill
             'amount' => $data['amount'],
             'remarks' => $data['remarks'] ?? $data['description'] ?? null,
             'completion_date' => $data['completion_date'] ?? $data['entry_date'] ?? now(),
-            'entry_date' => $data['entry_date'] ?? now(),
         ]);
     }
 

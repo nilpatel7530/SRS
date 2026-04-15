@@ -22,5 +22,25 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             return $user->hasRole('Admin') ? true : null;
         });
+
+        // Dynamic System Branding
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                $appName = \Modules\Admin\Models\Setting::get('app_name');
+                $appLogo = \Modules\Admin\Models\Setting::get('app_logo');
+
+                if ($appName) {
+                    config(['adminlte.title' => $appName]);
+                    config(['app.name' => $appName]);
+                    config(['adminlte.logo' => '<b>' . $appName . '</b>']);
+                }
+
+                if ($appLogo) {
+                    config(['adminlte.logo_img' => $appLogo]);
+                }
+            }
+        } catch (\Exception $e) {
+            // Silence errors during migrations/artisan commands
+        }
     }
 }

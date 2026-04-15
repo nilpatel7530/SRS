@@ -11,10 +11,12 @@ use App\Skills\ProjectManagementSkill;
 class ProjectController extends Controller
 {
     protected ProjectManagementSkill $projectSkill;
+    protected \App\Skills\ProjectAuditSkill $auditSkill;
 
-    public function __construct(ProjectManagementSkill $projectSkill)
+    public function __construct(ProjectManagementSkill $projectSkill, \App\Skills\ProjectAuditSkill $auditSkill)
     {
         $this->projectSkill = $projectSkill;
+        $this->auditSkill = $auditSkill;
     }
 
     /**
@@ -70,8 +72,52 @@ class ProjectController extends Controller
         ])->findOrFail($id);
 
         $hierarchy = $this->projectSkill->getProjectHierarchy($project);
+        $logs = \Modules\Projects\Models\ProjectActivity::with('user')
+            ->where('project_id', $project->id)
+            ->latest()
+            ->get();
 
-        return view('admin.projects.show', compact('project', 'hierarchy'));
+        return view('admin.projects.show', compact('project', 'hierarchy', 'logs'));
+    }
+
+    /**
+     * Show the form for editing the specified project.
+     */
+    public function edit($id)
+    {
+        $project = Project::findOrFail($id);
+        $departments = Department::all();
+        return view('admin.projects.edit', compact('project', 'departments'));
+    }
+
+    /**
+     * Update the specified project.
+     */
+    public function update(Request $request, $id)
+    {
+        $project = Project::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'department_id' => 'required|exists:departments,id',
+            'financial_type' => 'required|in:capex,opex',
+            'project_type' => 'required|in:service,supply',
+        ]);
+
+        $project->update($validated);
+
+        return redirect()->route('projects.index')->with('success', 'Project updated successfully.');
+    }
+
+    /**
+     * Remove the specified project.
+     */
+    public function destroy($id)
+    {
+        $project = Project::findOrFail($id);
+        $project->delete();
+
+        return redirect()->route('projects.index')->with('success', 'Project deleted successfully.');
     }
 
     /**
@@ -86,6 +132,22 @@ class ProjectController extends Controller
 
         $user = \App\Models\User::findOrFail($request->user_id);
         $this->projectSkill->assignUser($project, $user);
+        
+        $roleName = $user->roles->first()->name ?? 'N/A';
+        $this->auditSkill->logActivity($project, 'team', "Assigned team member: {$user->name} ($roleName)");
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Team member assigned successfully.',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->roles->first()->name ?? 'N/A'
+                ]
+            ]);
+        }
 
         return back()->with('success', 'Team member assigned successfully.');
     }

@@ -10,12 +10,7 @@
 @stop
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible mx-0">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-            {{ session('success') }}
-        </div>
-    @endif
+    @include('partials.alerts')
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible mx-0">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>

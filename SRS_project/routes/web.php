@@ -11,6 +11,7 @@ use Modules\Reports\Controllers\ReportController;
 use Modules\Users\Controllers\UserController;
 use Modules\Roles\Controllers\RoleController;
 use Modules\Projects\Controllers\DepartmentController;
+use Modules\Admin\Controllers\BrandingController;
 
 
 
@@ -24,15 +25,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Projects & Related routes
-    Route::middleware('can:projects.access')->group(function() {
-        Route::post('projects/{project}/assign', [\Modules\Projects\Controllers\ProjectController::class, 'assignTeam'])->name('projects.assignTeam');
-        Route::post('projects/{project}/capex', [\Modules\Finance\Controllers\FinanceController::class, 'storeCapex'])->name('projects.storeCapex');
-        Route::post('projects/{project}/opex', [\Modules\Finance\Controllers\FinanceController::class, 'storeOpex'])->name('projects.storeOpex');
-        Route::post('projects/{project}/invoices', [\Modules\Finance\Controllers\FinanceController::class, 'storeInvoice'])->name('projects.storeInvoice');
-        Route::post('projects/{project}/bg', [\Modules\Finance\Controllers\FinanceController::class, 'storeBG'])->name('projects.storeBG');
+    Route::middleware('can:projects.view')->group(function() {
+        Route::get('projects', [\Modules\Projects\Controllers\ProjectController::class, 'index'])->name('projects.index');
+        Route::get('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'show'])->name('projects.show');
+        
+        Route::middleware('can:projects.create')->group(function() {
+            Route::get('projects/create', [\Modules\Projects\Controllers\ProjectController::class, 'create'])->name('projects.create');
+            Route::post('projects', [\Modules\Projects\Controllers\ProjectController::class, 'store'])->name('projects.store');
+        });
+
+        Route::middleware('can:projects.edit')->group(function() {
+            Route::get('projects/{project}/edit', [\Modules\Projects\Controllers\ProjectController::class, 'edit'])->name('projects.edit');
+            Route::put('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'update'])->name('projects.update');
+            Route::post('projects/{project}/assign', [\Modules\Projects\Controllers\ProjectController::class, 'assignTeam'])->name('projects.assignTeam');
+            Route::post('projects/{project}/capex', [\Modules\Finance\Controllers\FinanceController::class, 'storeCapex'])->name('projects.storeCapex');
+            Route::post('projects/{project}/opex', [\Modules\Finance\Controllers\FinanceController::class, 'storeOpex'])->name('projects.storeOpex');
+            Route::post('projects/{project}/invoices', [\Modules\Finance\Controllers\FinanceController::class, 'storeInvoice'])->name('projects.storeInvoice');
+            Route::post('projects/{project}/bg', [\Modules\Finance\Controllers\FinanceController::class, 'storeBG'])->name('projects.storeBG');
+        });
+
+        Route::middleware('can:projects.delete')->group(function() {
+            Route::delete('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'destroy'])->name('projects.destroy');
+        });
+        
         Route::post('projects/{project}/documents', [\Modules\Documents\Controllers\DocumentController::class, 'store'])->name('documents.store');
         Route::get('documents/{document}/download', [\Modules\Documents\Controllers\DocumentController::class, 'download'])->name('documents.download');
-        Route::resource('projects', \Modules\Projects\Controllers\ProjectController::class);
     });
 
     // Proposals
@@ -48,6 +65,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserController::class)->middleware('can:users.access');
         Route::resource('roles', RoleController::class)->middleware('can:roles.access');
         Route::resource('permissions', \Modules\Roles\Controllers\PermissionController::class)->middleware('can:permissions.access');
+        
+        // Branding Settings
+        Route::get('branding', [BrandingController::class, 'index'])->name('admin.branding.index');
+        Route::post('branding', [BrandingController::class, 'update'])->name('admin.branding.update');
     });
 });
 

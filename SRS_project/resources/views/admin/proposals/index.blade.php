@@ -10,6 +10,7 @@
 @endsection
 
 @section('content')
+    @include('partials.alerts')
     <div class="card">
         <div class="card-body">
             <table class="table table-bordered table-striped">
@@ -32,7 +33,15 @@
                             <td>{{ number_format($proposal->estimated_value, 2) }}</td>
                             <td>{{ $proposal->submission_date }}</td>
                             <td>
-                                <span class="badge badge-{{ $proposal->status == 'Pending' ? 'warning' : 'success' }}">
+                                @php
+                                    $badgeClass = match($proposal->status) {
+                                        'Approved' => 'success',
+                                        'Pending' => 'warning',
+                                        'Rejected' => 'danger',
+                                        default => 'secondary'
+                                    };
+                                @endphp
+                                <span class="badge badge-{{ $badgeClass }}">
                                     {{ $proposal->status }}
                                 </span>
                             </td>
@@ -42,7 +51,7 @@
                                 <form action="{{ route('proposals.destroy', $proposal->id) }}" method="POST" style="display:inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Type of access should be restricted?')">Delete</button>
+                                    <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Are you sure you want to delete this proposal?')">Delete</button>
                                 </form>
                             </td>
                         </tr>

@@ -14,15 +14,18 @@ class FinanceController extends Controller
     protected FinancialTrackingSkill $financeSkill;
     protected InvoiceProcessingSkill $invoiceSkill;
     protected BankGuaranteeSkill $bgSkill;
+    protected \App\Skills\ProjectAuditSkill $auditSkill;
 
     public function __construct(
         FinancialTrackingSkill $financeSkill,
         InvoiceProcessingSkill $invoiceSkill,
-        BankGuaranteeSkill $bgSkill
+        BankGuaranteeSkill $bgSkill,
+        \App\Skills\ProjectAuditSkill $auditSkill
     ) {
         $this->financeSkill = $financeSkill;
         $this->invoiceSkill = $invoiceSkill;
         $this->bgSkill = $bgSkill;
+        $this->auditSkill = $auditSkill;
     }
 
     public function storeCapex(Request $request, $projectId)
@@ -34,7 +37,16 @@ class FinanceController extends Controller
             'completion_date' => 'required|date',
         ]);
 
-        $this->financeSkill->addCapexEntry($project, $validated);
+        $entry = $this->financeSkill->addCapexEntry($project, $validated);
+        $this->auditSkill->logActivity($project, 'capex', "Added CAPEX entry of amount {$validated['amount']} with remarks: {$validated['remarks']}");
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'CAPEX entry added successfully.',
+                'data' => $entry
+            ]);
+        }
 
         return back()->with('success', 'CAPEX entry added successfully.');
     }
@@ -49,7 +61,16 @@ class FinanceController extends Controller
             'entry_date' => 'required|date',
         ]);
 
-        $this->financeSkill->addOpexEntry($project, $validated);
+        $entry = $this->financeSkill->addOpexEntry($project, $validated);
+        $this->auditSkill->logActivity($project, 'opex', "Added OPEX entry of amount {$validated['amount']} for duration {$validated['duration']}");
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'OPEX entry added successfully.',
+                'data' => $entry
+            ]);
+        }
 
         return back()->with('success', 'OPEX entry added successfully.');
     }
@@ -67,7 +88,16 @@ class FinanceController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
-        $this->invoiceSkill->createInvoice($project, $validated);
+        $invoice = $this->invoiceSkill->createInvoice($project, $validated);
+        $this->auditSkill->logActivity($project, 'invoice', "Recorded Invoice: {$validated['vendor_invoice_no']} (Vendor) / " . ($validated['cel_invoice_no'] ?? 'N/A') . " (CEL)");
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice recorded successfully.',
+                'data' => $invoice
+            ]);
+        }
 
         return back()->with('success', 'Invoice recorded successfully.');
     }
@@ -83,7 +113,16 @@ class FinanceController extends Controller
             'validity_date' => 'required|date',
         ]);
 
-        $this->bgSkill->createBG($project, $validated);
+        $bg = $this->bgSkill->createBG($project, $validated);
+        $this->auditSkill->logActivity($project, 'bg', "Recorded {$validated['type']} Bank Guarantee: {$validated['bg_no']} for amount {$validated['amount']}");
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bank Guarantee recorded successfully.',
+                'data' => $bg
+            ]);
+        }
 
         return back()->with('success', 'Bank Guarantee recorded successfully.');
     }

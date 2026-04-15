@@ -12,10 +12,12 @@ use Illuminate\Support\Facades\Storage;
 class DocumentController extends Controller
 {
     protected DocumentManagementSkill $documentSkill;
+    protected \App\Skills\ProjectAuditSkill $auditSkill;
 
-    public function __construct(DocumentManagementSkill $documentSkill)
+    public function __construct(DocumentManagementSkill $documentSkill, \App\Skills\ProjectAuditSkill $auditSkill)
     {
         $this->documentSkill = $documentSkill;
+        $this->auditSkill = $auditSkill;
     }
 
     public function store(Request $request, $projectId)
@@ -27,8 +29,20 @@ class DocumentController extends Controller
             'type' => 'required|string|max:50',
         ]);
 
+        $documents = [];
         if ($request->hasFile('files')) {
-            $this->documentSkill->uploadMultiple($project, $request->file('files'), $request->type);
+            $documents = $this->documentSkill->uploadMultiple($project, $request->file('files'), $request->type);
+            foreach ($documents as $doc) {
+                $this->auditSkill->logActivity($project, 'document', "Uploaded document: {$doc->file_name} (Type: " . strtoupper($doc->type) . ")");
+            }
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Documents uploaded successfully.',
+                'data' => $documents
+            ]);
         }
 
         return back()->with('success', 'Documents uploaded successfully.');
