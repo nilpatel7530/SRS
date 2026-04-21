@@ -74,13 +74,19 @@ class ProjectController extends Controller
             'projectTargets'
         ])->findOrFail($id);
 
+        $financeSkill = app(\App\Skills\FinancialTrackingSkill::class);
+        $targetActuals = [];
+        foreach ($project->projectTargets as $target) {
+            $targetActuals[$target->financial_year] = $financeSkill->getMonthlyActuals($project, $target->financial_year);
+        }
+
         $hierarchy = $this->projectSkill->getProjectHierarchy($project);
         $logs = \Modules\Projects\Models\ProjectActivity::with('user')
             ->where('project_id', $project->id)
             ->latest()
             ->get();
 
-        return view('admin.projects.show', compact('project', 'hierarchy', 'logs'));
+        return view('admin.projects.show', compact('project', 'hierarchy', 'logs', 'targetActuals'));
     }
 
     /**

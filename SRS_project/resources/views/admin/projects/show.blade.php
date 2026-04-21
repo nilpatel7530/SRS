@@ -340,28 +340,51 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="table-responsive">
-                                        <table class="table table-bordered table-sm">
+                                        <table class="table table-bordered table-sm text-center">
                                             <thead class="bg-light">
                                                 <tr>
-                                                    <th>FY</th>
-                                                    <th>Prev FY Billed</th>
+                                                    <th style="width: 100px;">FY</th>
+                                                    <th style="width: 80px;">Type</th>
+                                                    <th>Prev FY</th>
                                                     <th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th>
                                                     <th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th><th>Mar</th>
                                                     <th>Total</th>
-                                                    <th>Remarks</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="targets-table-body">
                                                 @forelse($project->projectTargets->sortByDesc('financial_year') as $target)
-                                                    <tr>
-                                                        <td>{{ $target->financial_year }}</td>
-                                                        <td>{{ number_format($target->billed_prev_fy, 0) }}</td>
+                                                    @php
+                                                        $actuals = $targetActuals[$target->financial_year] ?? null;
+                                                    @endphp
+                                                    <!-- Target Row -->
+                                                    <tr class="bg-white">
+                                                        <td rowspan="2" class="align-middle font-weight-bold">{{ $target->financial_year }}</td>
+                                                        <td class="text-primary font-weight-bold">Target</td>
+                                                        <td class="text-muted">{{ number_format($target->billed_prev_fy, 0) }}</td>
                                                         @foreach(['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as $m)
                                                             <td>{{ number_format($target->{$m}, 0) }}</td>
                                                         @endforeach
-                                                        <td class="font-weight-bold text-primary">{{ number_format($target->total_target, 0) }}</td>
-                                                        <td><small>{{ $target->remarks }}</small></td>
+                                                        <td class="bg-light font-weight-bold">{{ number_format($target->total_target, 0) }}</td>
                                                     </tr>
+                                                    <!-- Actual Row -->
+                                                    <tr class="bg-light">
+                                                        <td class="text-success font-weight-bold">Actual</td>
+                                                        <td>-</td>
+                                                        @foreach(['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as $m)
+                                                            @php
+                                                                $val = $actuals[$m] ?? 0;
+                                                                $tVal = $target->{$m};
+                                                                $colorClass = $val >= $tVal && $tVal > 0 ? 'text-success' : ($val < $tVal && $tVal > 0 ? 'text-danger' : '');
+                                                            @endphp
+                                                            <td class="{{ $colorClass }} font-weight-bold">{{ number_format($val, 0) }}</td>
+                                                        @endforeach
+                                                        <td class="font-weight-bold text-success">{{ number_format($actuals['total_actual'] ?? 0, 0) }}</td>
+                                                    </tr>
+                                                    @if($target->remarks)
+                                                        <tr>
+                                                            <td colspan="16" class="p-1 text-left"><small class="text-muted ml-2"><b>Remarks:</b> {{ $target->remarks }}</small></td>
+                                                        </tr>
+                                                    @endif
                                                 @empty
                                                     <tr><td colspan="16" class="text-center text-muted">No targets defined yet.</td></tr>
                                                 @endforelse
@@ -371,9 +394,12 @@
                                     
                                     <hr>
                                     
-                                    <div class="card card-default mt-3">
+                                    <div class="card card-default mt-3 shadow-none border">
                                         <div class="card-header">
                                             <h3 class="card-title"><i class="fas fa-edit"></i> Set/Update Monthly Targets</h3>
+                                            <div class="card-tools">
+                                                <span class="badge badge-info">Enter full numbers (e.g. 130000 for 1.3L)</span>
+                                            </div>
                                         </div>
                                         <form action="{{ route('projects.storeTarget', $project->id) }}" method="POST" class="ajax-form" id="target-form">
                                             @csrf
@@ -401,7 +427,7 @@
                                                     @foreach(['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as $m)
                                                         <div class="col-md-2 col-sm-4">
                                                             <div class="form-group">
-                                                                <label class="text-uppercase">{{ $m }}</label>
+                                                                <label class="text-uppercase" style="font-size: 11px;">{{ $m }}</label>
                                                                 <input type="number" step="0.01" name="{{ $m }}" class="form-control form-control-sm" value="0">
                                                             </div>
                                                         </div>
@@ -410,10 +436,10 @@
                                                 
                                                 <div class="form-group">
                                                     <label>Remarks</label>
-                                                    <textarea name="remarks" class="form-control" rows="2"></textarea>
+                                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Describe how targets were defined..."></textarea>
                                                 </div>
                                             </div>
-                                            <div class="card-footer">
+                                            <div class="card-footer text-right">
                                                 <button type="submit" class="btn btn-primary">Save Targets</button>
                                             </div>
                                         </form>

@@ -40,15 +40,17 @@ class DashboardAggregationSkill extends AbstractSkill
                 'pending_invoices' => $pendingInvoices->count(),
                 'total_financials' => $totalCapex + $totalOpex,
                 'total_invoiced' => $totalInvoiced,
-                'budget_utilization' => $totalInvoiced > 0 ? round(($totalInvoiced / ($totalCapex + $totalOpex + 1)) * 100, 2) : 0,
+                'budget_utilization' => $totalInvoiced > 0 ? (int)round(($totalInvoiced / ($totalCapex + $totalOpex + 1)) * 100) : 0,
                 'expiring_bgs' => $activeBGs->filter(function($bg) {
                     return \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false) <= 30;
                 })->count(),
                 'recent_cleared_count' => $projects->flatMap->invoices
-                    ->where('status', 'released')
+                    ->where('status', 'paid')
                     ->where('updated_at', '>=', now()->subDays(7))
                     ->count(),
-                'portfolio_health' => $this->calculateHealth($activeBGs->count(), $pendingInvoices->count()),
+                'portfolio_health' => $this->calculateHealth($activeBGs->filter(function($bg) {
+                    return \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false) <= 30;
+                })->count(), $pendingInvoices->count()),
             ];
         });
     }

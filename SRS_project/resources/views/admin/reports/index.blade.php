@@ -93,9 +93,9 @@
                                 <span class="badge badge-secondary">{{ $row['financial_type'] }}</span><br>
                                 <span class="badge badge-outline-secondary">{{ $row['project_type'] }}</span>
                             </td>
-                            <td class="text-right">{{ number_format($row['total_capex'], 2) }}</td>
-                            <td class="text-right">{{ number_format($row['total_opex'], 2) }}</td>
-                            <td class="text-right font-weight-bold">{{ number_format($row['total_invoiced'], 2) }}</td>
+                            <td class="text-right">{{ number_format($row['total_capex'], 0) }}</td>
+                            <td class="text-right">{{ number_format($row['total_opex'], 0) }}</td>
+                            <td class="text-right font-weight-bold">{{ number_format($row['total_invoiced'], 0) }}</td>
                             @foreach($row['month_wise'] as $total)
                                 <td class="bg-light text-right">{{ $total > 0 ? number_format($total, 0) : '-' }}</td>
                             @endforeach

@@ -96,5 +96,48 @@ class FinancialTrackingSkill extends AbstractSkill
             ]
         );
     }
+
+    /**
+     * Get monthly actual billing for a financial year.
+     */
+    public function getMonthlyActuals(Project $project, string $financialYear): array
+    {
+        // Parse FY e.g. "2026-27"
+        $parts = explode('-', $financialYear);
+        if (count($parts) !== 2) return array_fill_keys(['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'], 0);
+
+        $startYear = (int)$parts[0];
+        $endYear = $startYear + 1;
+
+        $months = [
+            'apr' => ['m' => 4, 'y' => $startYear],
+            'may' => ['m' => 5, 'y' => $startYear],
+            'jun' => ['m' => 6, 'y' => $startYear],
+            'jul' => ['m' => 7, 'y' => $startYear],
+            'aug' => ['m' => 8, 'y' => $startYear],
+            'sep' => ['m' => 9, 'y' => $startYear],
+            'oct' => ['m' => 10, 'y' => $startYear],
+            'nov' => ['m' => 11, 'y' => $startYear],
+            'dec' => ['m' => 12, 'y' => $startYear],
+            'jan' => ['m' => 1, 'y' => $endYear],
+            'feb' => ['m' => 2, 'y' => $endYear],
+            'mar' => ['m' => 3, 'y' => $endYear],
+        ];
+
+        $actuals = [];
+        $total = 0;
+
+        foreach ($months as $key => $config) {
+            $amount = $project->invoices()
+                ->whereYear('invoice_date', $config['y'])
+                ->whereMonth('invoice_date', $config['m'])
+                ->sum('cel_total');
+            $actuals[$key] = $amount;
+            $total += $amount;
+        }
+
+        $actuals['total_actual'] = $total;
+        return $actuals;
+    }
 }
 
