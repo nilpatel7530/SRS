@@ -80,6 +80,7 @@
                         <li class="nav-item"><a class="nav-link" href="#tab_documents" data-toggle="tab">Documents</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_bgs" data-toggle="tab">Bank Guarantees</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_invoices" data-toggle="tab">Invoices</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#tab_targets" data-toggle="tab">Financial Targets</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_team" data-toggle="tab">Team</a></li>
                         @can('administration.access')
                             <li class="nav-item"><a class="nav-link text-danger" href="#tab_logs" data-toggle="tab"><i class="fas fa-history"></i> Activity Logs</a></li>
@@ -334,6 +335,93 @@
                             </div>
                         </div>
 
+                        <!-- Financial Targets Tab -->
+                        <div class="tab-pane" id="tab_targets">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>FY</th>
+                                                    <th>Prev FY Billed</th>
+                                                    <th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th>
+                                                    <th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th><th>Mar</th>
+                                                    <th>Total</th>
+                                                    <th>Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="targets-table-body">
+                                                @forelse($project->projectTargets->sortByDesc('financial_year') as $target)
+                                                    <tr>
+                                                        <td>{{ $target->financial_year }}</td>
+                                                        <td>{{ number_format($target->billed_prev_fy, 0) }}</td>
+                                                        @foreach(['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as $m)
+                                                            <td>{{ number_format($target->{$m}, 0) }}</td>
+                                                        @endforeach
+                                                        <td class="font-weight-bold text-primary">{{ number_format($target->total_target, 0) }}</td>
+                                                        <td><small>{{ $target->remarks }}</small></td>
+                                                    </tr>
+                                                @empty
+                                                    <tr><td colspan="16" class="text-center text-muted">No targets defined yet.</td></tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <div class="card card-default mt-3">
+                                        <div class="card-header">
+                                            <h3 class="card-title"><i class="fas fa-edit"></i> Set/Update Monthly Targets</h3>
+                                        </div>
+                                        <form action="{{ route('projects.storeTarget', $project->id) }}" method="POST" class="ajax-form" id="target-form">
+                                            @csrf
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Financial Year</label>
+                                                            <select name="financial_year" class="form-control" required>
+                                                                <option value="2025-26">2025-26</option>
+                                                                <option value="2026-27" selected>2026-27</option>
+                                                                <option value="2027-28">2027-28</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Billed in Prev FY</label>
+                                                            <input type="number" step="0.01" name="billed_prev_fy" class="form-control" value="0">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    @foreach(['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as $m)
+                                                        <div class="col-md-2 col-sm-4">
+                                                            <div class="form-group">
+                                                                <label class="text-uppercase">{{ $m }}</label>
+                                                                <input type="number" step="0.01" name="{{ $m }}" class="form-control form-control-sm" value="0">
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                    <label>Remarks</label>
+                                                    <textarea name="remarks" class="form-control" rows="2"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <button type="submit" class="btn btn-primary">Save Targets</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Team Tab -->
                         <div class="tab-pane" id="tab_team">
                             <h4>Project Team Hierarchy</h4>
@@ -580,6 +668,33 @@ $(function() {
                 </li>`;
                 teamList.append(rowHtml);
                 break;
+
+            case 'target-form':
+                tableBody = $('#targets-table-body');
+                const fy = data.financial_year;
+                // Check if row already exists for this FY
+                let existingRow = tableBody.find(`tr:contains('${fy}')`);
+                
+                const format = (val) => parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 0});
+                
+                rowHtml = `<tr>
+                    <td>${fy}</td>
+                    <td>${format(data.billed_prev_fy)}</td>
+                    <td>${format(data.apr)}</td><td>${format(data.may)}</td><td>${format(data.jun)}</td>
+                    <td>${format(data.jul)}</td><td>${format(data.aug)}</td><td>${format(data.sep)}</td>
+                    <td>${format(data.oct)}</td><td>${format(data.nov)}</td><td>${format(data.dec)}</td>
+                    <td>${format(data.jan)}</td><td>${format(data.feb)}</td><td>${format(data.mar)}</td>
+                    <td class="font-weight-bold text-primary">${format(data.total_target)}</td>
+                    <td><small>${data.remarks || ''}</small></td>
+                </tr>`;
+
+                if (existingRow.length) {
+                    existingRow.replaceWith(rowHtml);
+                } else {
+                    removeEmptyRow(tableBody);
+                    tableBody.prepend(rowHtml);
+                }
+                break;
         }
     }
 
@@ -672,6 +787,9 @@ $(function() {
                     teamList.find('.text-muted').remove();
                     teamList.append(`<div class="mb-1"><i class="fas fa-user-circle text-muted"></i> ${data.name}</div>`);
                 }
+                break;
+            case 'target-form':
+                addRow('target', `Updated financial targets for FY ${data.financial_year}. Total target: ${data.total_target}`);
                 break;
         }
     }

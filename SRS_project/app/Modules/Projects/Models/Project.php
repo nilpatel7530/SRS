@@ -15,7 +15,14 @@ use Modules\Documents\Models\Document;
 
 class Project extends Model
 {
-    protected $fillable = ['name', 'department_id', 'financial_type', 'project_type'];
+    protected $fillable = [
+        'name', 
+        'department_id', 
+        'financial_type', 
+        'project_type',
+        'is_extension',
+        'extension_details'
+    ];
 
     public function department(): BelongsTo
     {
@@ -50,5 +57,10 @@ class Project extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
+    }
+
+    public function projectTargets(): HasMany
+    {
+        return $this->hasMany(ProjectTarget::class);
     }
 }

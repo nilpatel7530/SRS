@@ -9,18 +9,38 @@ use App\Skills\ReportingEngineSkill;
 class ReportController extends Controller
 {
     protected ReportingEngineSkill $reportingSkill;
+    protected \App\Skills\DashboardAggregationSkill $dashboardSkill;
 
-    public function __construct(ReportingEngineSkill $reportingSkill)
-    {
+    public function __construct(
+        ReportingEngineSkill $reportingSkill,
+        \App\Skills\DashboardAggregationSkill $dashboardSkill
+    ) {
         $this->reportingSkill = $reportingSkill;
+        $this->dashboardSkill = $dashboardSkill;
     }
 
     public function index(Request $request)
     {
         $filters = $request->only(['department_id', 'type']);
         $reportData = $this->reportingSkill->buildReportData($filters);
+        $overviewStats = $this->dashboardSkill->getKPIs($request->user());
 
-        return view('admin.reports.index', compact('reportData'));
+        return view('admin.reports.index', compact('reportData', 'overviewStats'));
+    }
+
+    public function yearwise(Request $request)
+    {
+        $financialYear = $request->get('fy', '2026-27');
+        $targets = $this->reportingSkill->getYearWiseTargets($financialYear);
+
+        return view('admin.reports.yearwise', compact('targets', 'financialYear'));
+    }
+
+    public function reconciliation(Request $request)
+    {
+        $reconciliationData = $this->reportingSkill->getFinancialReconciliationData();
+
+        return view('admin.reports.reconciliation', compact('reconciliationData'));
     }
 
     public function exportCsv(Request $request)

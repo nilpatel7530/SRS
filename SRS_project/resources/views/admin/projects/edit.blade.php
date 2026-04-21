@@ -51,7 +51,33 @@
                             </select>
                             @error('project_type') <span class="invalid-feedback">{{ $message }}</span> @enderror
                         </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="is_extension" name="is_extension" value="1" {{ old('is_extension', $project->is_extension) ? 'checked' : '' }}>
+                                <label for="is_extension" class="custom-control-label">Is Extension of Existing Project?</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="extension_details_group" style="{{ old('is_extension', $project->is_extension) ? '' : 'display: none;' }}">
+                            <label for="extension_details">Extension Details</label>
+                            <textarea class="form-control" name="extension_details" id="extension_details" rows="2" placeholder="Describe the extension context...">{{ old('extension_details', $project->extension_details) }}</textarea>
+                        </div>
                     </div>
+
+                    @section('js')
+                    <script>
+                        $(document).ready(function() {
+                            $('#is_extension').change(function() {
+                                if($(this).is(':checked')) {
+                                    $('#extension_details_group').show();
+                                } else {
+                                    $('#extension_details_group').hide();
+                                }
+                            });
+                        });
+                    </script>
+                    @append
 
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary">Update Project</button>

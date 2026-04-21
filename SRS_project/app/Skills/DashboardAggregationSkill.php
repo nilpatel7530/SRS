@@ -44,7 +44,23 @@ class DashboardAggregationSkill extends AbstractSkill
                 'expiring_bgs' => $activeBGs->filter(function($bg) {
                     return \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false) <= 30;
                 })->count(),
+                'recent_cleared_count' => $projects->flatMap->invoices
+                    ->where('status', 'released')
+                    ->where('updated_at', '>=', now()->subDays(7))
+                    ->count(),
+                'portfolio_health' => $this->calculateHealth($activeBGs->count(), $pendingInvoices->count()),
             ];
         });
+    }
+
+    private function calculateHealth(int $expiringBgs, int $pendingInvoices): array
+    {
+        if ($expiringBgs > 0) {
+            return ['text' => 'Critical (BG Expirations)', 'color' => 'danger'];
+        }
+        if ($pendingInvoices > 10) {
+            return ['text' => 'Action Required (High Arrears)', 'color' => 'warning'];
+        }
+        return ['text' => 'Stable / Good', 'color' => 'success'];
     }
 }

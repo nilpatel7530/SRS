@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('admin.dashboard');
 });
 
 use Modules\Admin\Controllers\DashboardController;
@@ -16,24 +16,26 @@ use Modules\Admin\Controllers\BrandingController;
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('can:dashboard.access');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard')->middleware('can:dashboard.access');
     
     // Reports routes
     Route::middleware('can:reports.access')->group(function() {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/yearwise', [ReportController::class, 'yearwise'])->name('reports.yearwise');
+        Route::get('reports/reconciliation', [ReportController::class, 'reconciliation'])->name('reports.reconciliation');
         Route::get('reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
     });
 
     // Projects & Related routes
     Route::middleware('can:projects.view')->group(function() {
-        Route::get('projects', [\Modules\Projects\Controllers\ProjectController::class, 'index'])->name('projects.index');
-        Route::get('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'show'])->name('projects.show');
-        
         Route::middleware('can:projects.create')->group(function() {
             Route::get('projects/create', [\Modules\Projects\Controllers\ProjectController::class, 'create'])->name('projects.create');
             Route::post('projects', [\Modules\Projects\Controllers\ProjectController::class, 'store'])->name('projects.store');
         });
 
+        Route::get('projects', [\Modules\Projects\Controllers\ProjectController::class, 'index'])->name('projects.index');
+        Route::get('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'show'])->name('projects.show');
+        
         Route::middleware('can:projects.edit')->group(function() {
             Route::get('projects/{project}/edit', [\Modules\Projects\Controllers\ProjectController::class, 'edit'])->name('projects.edit');
             Route::put('projects/{project}', [\Modules\Projects\Controllers\ProjectController::class, 'update'])->name('projects.update');
@@ -42,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('projects/{project}/opex', [\Modules\Finance\Controllers\FinanceController::class, 'storeOpex'])->name('projects.storeOpex');
             Route::post('projects/{project}/invoices', [\Modules\Finance\Controllers\FinanceController::class, 'storeInvoice'])->name('projects.storeInvoice');
             Route::post('projects/{project}/bg', [\Modules\Finance\Controllers\FinanceController::class, 'storeBG'])->name('projects.storeBG');
+            Route::post('projects/{project}/target', [\Modules\Finance\Controllers\FinanceController::class, 'storeTarget'])->name('projects.storeTarget');
         });
 
         Route::middleware('can:projects.delete')->group(function() {
@@ -55,6 +58,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Proposals
     Route::middleware('can:proposals.access')->group(function() {
         Route::resource('proposals', \Modules\Projects\Controllers\ProposalController::class);
+    });
+    
+    // Finance Routes
+    Route::middleware('can:finance.access')->group(function() {
+        Route::get('finance/invoices', [\Modules\Finance\Controllers\FinanceController::class, 'index'])->name('finance.invoices.index');
     });
 
     // Departments

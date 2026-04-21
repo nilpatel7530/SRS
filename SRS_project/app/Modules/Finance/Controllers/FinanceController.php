@@ -28,6 +28,12 @@ class FinanceController extends Controller
         $this->auditSkill = $auditSkill;
     }
 
+    public function index()
+    {
+        $invoices = \Modules\Finance\Models\Invoice::with('project')->latest()->get();
+        return view('admin.finance.invoices.index', compact('invoices'));
+    }
+
     public function storeCapex(Request $request, $projectId)
     {
         $project = Project::findOrFail($projectId);
@@ -125,5 +131,40 @@ class FinanceController extends Controller
         }
 
         return back()->with('success', 'Bank Guarantee recorded successfully.');
+    }
+
+    public function storeTarget(Request $request, $projectId)
+    {
+        $project = Project::findOrFail($projectId);
+        $validated = $request->validate([
+            'financial_year' => 'required|string|regex:/^\d{4}-\d{2}$/',
+            'billed_prev_fy' => 'nullable|numeric|min:0',
+            'apr' => 'nullable|numeric|min:0',
+            'may' => 'nullable|numeric|min:0',
+            'jun' => 'nullable|numeric|min:0',
+            'jul' => 'nullable|numeric|min:0',
+            'aug' => 'nullable|numeric|min:0',
+            'sep' => 'nullable|numeric|min:0',
+            'oct' => 'nullable|numeric|min:0',
+            'nov' => 'nullable|numeric|min:0',
+            'dec' => 'nullable|numeric|min:0',
+            'jan' => 'nullable|numeric|min:0',
+            'feb' => 'nullable|numeric|min:0',
+            'mar' => 'nullable|numeric|min:0',
+            'remarks' => 'nullable|string',
+        ]);
+
+        $target = $this->financeSkill->updateProjectTarget($project, $validated);
+        $this->auditSkill->logActivity($project, 'target', "Updated targets for FY {$validated['financial_year']}");
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Targets updated successfully.',
+                'data' => array_merge($target->toArray(), ['total_target' => $target->total_target])
+            ]);
+        }
+
+        return back()->with('success', 'Targets updated successfully.');
     }
 }

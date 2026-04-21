@@ -49,6 +49,8 @@ class ProjectController extends Controller
             'department_id' => 'required|exists:departments,id',
             'financial_type' => 'required|in:capex,opex',
             'project_type' => 'required|in:service,supply',
+            'is_extension' => 'nullable|boolean',
+            'extension_details' => 'nullable|string',
         ]);
 
         $project = $this->projectSkill->createProject($validated);
@@ -68,7 +70,8 @@ class ProjectController extends Controller
             'bankGuarantees', 
             'invoices', 
             'documents',
-            'users'
+            'users',
+            'projectTargets'
         ])->findOrFail($id);
 
         $hierarchy = $this->projectSkill->getProjectHierarchy($project);
@@ -102,6 +105,8 @@ class ProjectController extends Controller
             'department_id' => 'required|exists:departments,id',
             'financial_type' => 'required|in:capex,opex',
             'project_type' => 'required|in:service,supply',
+            'is_extension' => 'nullable|boolean',
+            'extension_details' => 'nullable|string',
         ]);
 
         $project->update($validated);

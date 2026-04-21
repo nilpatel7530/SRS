@@ -334,10 +334,26 @@ return [
             'can'  => 'proposals.access',
         ],
         [
-            'text' => 'Reports',
-            'url'  => 'reports',
-            'icon' => 'fas fa-fw fa-chart-bar',
-            'can'  => 'reports.access',
+            'text'    => 'Reports',
+            'icon'    => 'fas fa-fw fa-chart-bar',
+            'can'     => 'reports.access',
+            'submenu' => [
+                [
+                    'text' => 'Development Reports',
+                    'url'  => 'reports',
+                    'icon' => 'fas fa-fw fa-file-invoice',
+                ],
+                [
+                    'text' => 'YearWise Dashboard',
+                    'url'  => 'reports/yearwise',
+                    'icon' => 'fas fa-fw fa-calendar-alt',
+                ],
+                [
+                    'text' => 'Financial Reconciliation',
+                    'url'  => 'reports/reconciliation',
+                    'icon' => 'fas fa-fw fa-balance-scale',
+                ],
+            ],
         ],
         [
             'text' => 'Departments',

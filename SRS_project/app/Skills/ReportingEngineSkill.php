@@ -62,7 +62,133 @@ class ReportingEngineSkill extends AbstractSkill
                 'bg_status' => $bg ? ucfirst($bg->status) : 'Missing',
                 'month_wise' => $monthWiseInvoices,
                 'projections' => $projections,
-                'remarks' => $project->remarks ?? 'Consolidated Project View',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get Year-Wise targets and actual billing for projects.
+     */
+    public function getYearWiseTargets(string $financialYear = '2026-27'): array
+    {
+        // Parse FY (e.g. 2026-27)
+        [$startYear, $endYearAbbr] = explode('-', $financialYear);
+        $startYearInt = (int)$startYear;
+        $endYearInt = 2000 + (int)$endYearAbbr;
+
+        $startDate = "$startYearInt-04-01";
+        $endDate = "$endYearInt-03-31";
+
+        // Previous FY Range
+        $prevStart = ($startYearInt - 1) . "-04-01";
+        $prevEnd = ($startYearInt - 1) . "-03-31"; // This is actually end of march of current start year
+        // Wait, prev FY for 2026-27 is 2025-04-01 to 2026-03-31
+        $prevEnd = $startYearInt . "-03-31";
+
+        return Project::with([
+            'department', 
+            'projectTargets' => function($query) use ($financialYear) {
+                $query->where('financial_year', $financialYear);
+            },
+            'invoices' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('invoice_date', [$startDate, $endDate]);
+            }
+        ])->get()->map(function($project) use ($startYearInt) {
+            $target = $project->projectTargets->first();
+            
+            // Map actual invoices to months
+            $actuals = [
+                'apr' => 0, 'may' => 0, 'jun' => 0, 'jul' => 0, 'aug' => 0, 'sep' => 0,
+                'oct' => 0, 'nov' => 0, 'dec' => 0, 'jan' => 0, 'feb' => 0, 'mar' => 0
+            ];
+
+            foreach ($project->invoices as $invoice) {
+                $m = strtolower(date('M', strtotime($invoice->invoice_date)));
+                if (isset($actuals[$m])) {
+                    $actuals[$m] += $invoice->total_amount;
+                }
+            }
+
+            // Actual billing in previous FY
+            $billedPrevFYActual = $project->invoices()
+                ->where('invoice_date', '<', "$startYearInt-04-01")
+                ->sum('total_amount');
+
+            $targetsData = [
+                'apr' => $target ? $target->apr : 0,
+                'may' => $target ? $target->may : 0,
+                'jun' => $target ? $target->jun : 0,
+                'jul' => $target ? $target->jul : 0,
+                'aug' => $target ? $target->aug : 0,
+                'sep' => $target ? $target->sep : 0,
+                'oct' => $target ? $target->oct : 0,
+                'nov' => $target ? $target->nov : 0,
+                'dec' => $target ? $target->dec : 0,
+                'jan' => $target ? $target->jan : 0,
+                'feb' => $target ? $target->feb : 0,
+                'mar' => $target ? $target->mar : 0,
+            ];
+
+            return [
+                'id' => $project->id,
+                'customer' => $project->department->name ?? 'N/A',
+                'project_name' => $project->name,
+                'financial_type' => strtoupper($project->financial_type ?? 'N/A'),
+                'project_value' => $project->capexEntries->sum('amount') + $project->opexEntries->sum('amount'),
+                'billed_prev_fy' => $target ? $target->billed_prev_fy : 0,
+                'billed_prev_fy_actual' => $billedPrevFYActual,
+                'targets' => $targetsData,
+                'actuals' => $actuals,
+                'total_target' => $target ? $target->total_target : 0,
+                'total_actual' => array_sum($actuals),
+                'remarks' => $target ? $target->remarks : '',
+            ];
+        })->toArray();
+    }
+    /**
+     * Get data for Financial Reconciliation report.
+     */
+    public function getFinancialReconciliationData(): array
+    {
+        return Project::with(['department', 'invoices' => function($query) {
+            $query->orderBy('invoice_date', 'asc');
+        }])->get()->map(function($project) {
+            $invoicesData = $project->invoices->map(function($invoice) {
+                $deductions = ($invoice->tds_deduction ?? 0) + 
+                              ($invoice->gst_tds_deduction ?? 0) + 
+                              ($invoice->bank_charges ?? 0) + 
+                              ($invoice->ta_da ?? 0);
+                
+                return [
+                    'id' => $invoice->id,
+                    'invoice_no' => $invoice->cel_invoice_no,
+                    'date' => $invoice->invoice_date,
+                    'desc' => $invoice->work_description,
+                    'value' => $invoice->total_amount,
+                    'received' => $invoice->payment_received,
+                    'received_date' => $invoice->customer_payment_date,
+                    'received_note' => $invoice->customer_payment_note,
+                    'tds' => $invoice->tds_deduction ?? 0,
+                    'gst_tds' => $invoice->gst_tds_deduction ?? 0,
+                    'bank_charges' => $invoice->bank_charges ?? 0,
+                    'ta_da' => $invoice->ta_da ?? 0,
+                    'total_deductions' => $deductions,
+                    'vendor_name' => $invoice->vendor_name ?? 'N/A',
+                    'vendor_paid' => $invoice->vendor_paid_amount ?? 0,
+                    'vendor_date' => $invoice->vendor_payment_date,
+                    'net_margin' => ($invoice->payment_received ?? 0) - ($invoice->vendor_paid_amount ?? 0) - $deductions
+                ];
+            });
+
+            return [
+                'id' => $project->id,
+                'customer' => $project->department->name ?? 'N/A',
+                'project_name' => $project->name,
+                'project_value' => $project->capexEntries->sum('amount') + $project->opexEntries->sum('amount'),
+                'invoices' => $invoicesData,
+                'total_received' => $project->invoices->sum('payment_received'),
+                'total_vendor_paid' => $project->invoices->sum('vendor_paid_amount'),
+                'total_margin' => $invoicesData->sum('net_margin')
             ];
         })->toArray();
     }

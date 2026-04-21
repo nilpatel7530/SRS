@@ -24,19 +24,43 @@ class ProposalController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'estimated_value' => 'nullable|numeric',
-            'submission_date' => 'nullable|date',
+            'status' => 'required|in:Open,Closed,Awarded',
+            'proposals.*' => 'nullable|mimes:pdf,doc,docx,xlsx,xls,zip|max:10240',
         ]);
 
-        ProjectProposal::create([
+        $proposal = ProjectProposal::create([
             'name' => $request->name,
-            'status' => 'Pending',
-            'submission_date' => $request->submission_date,
+            'project_type' => $request->project_type,
+            'state' => $request->state,
+            'vendor_name' => $request->vendor_name,
+            'work_order_date' => $request->work_order_date,
+            'sent_by' => $request->sent_by,
+            'status' => $request->status,
+            'description_of_work' => $request->description_of_work,
             'estimated_value' => $request->estimated_value,
             'remarks' => $request->remarks,
             'created_by' => auth()->id(),
         ]);
 
-        return redirect()->route('proposals.index')->with('success', 'Proposal created successfully.');
+        // Handle multi-proposal upload
+        if ($request->hasFile('proposals')) {
+            foreach ($request->file('proposals') as $file) {
+                if ($file->isValid()) {
+                    $path = $file->store('proposals');
+                    \Modules\Documents\Models\Document::create([
+                        'proposal_id' => $proposal->id,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'size' => $file->getSize(),
+                        'type' => $file->getClientOriginalExtension(),
+                        'category' => 'Proposal',
+                        'uploader_id' => auth()->id(),
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('proposals.index')->with('success', 'Proposal Hub created successfully.');
     }
 
     public function edit(ProjectProposal $proposal)
@@ -48,12 +72,41 @@ class ProposalController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'status' => 'required|string',
             'estimated_value' => 'nullable|numeric',
-            'submission_date' => 'nullable|date',
+            'status' => 'required|in:Open,Closed,Awarded',
+            'proposals.*' => 'nullable|mimes:pdf,doc,docx,xlsx,xls,zip|max:10240',
         ]);
 
-        $proposal->update($request->all());
+        $proposal->update([
+            'name' => $request->name,
+            'project_type' => $request->project_type,
+            'state' => $request->state,
+            'vendor_name' => $request->vendor_name,
+            'work_order_date' => $request->work_order_date,
+            'sent_by' => $request->sent_by,
+            'status' => $request->status,
+            'description_of_work' => $request->description_of_work,
+            'estimated_value' => $request->estimated_value,
+            'remarks' => $request->remarks,
+        ]);
+
+        // Handle additional multi-proposal uploads
+        if ($request->hasFile('proposals')) {
+            foreach ($request->file('proposals') as $file) {
+                if ($file->isValid()) {
+                    $path = $file->store('proposals');
+                    \Modules\Documents\Models\Document::create([
+                        'proposal_id' => $proposal->id,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'size' => $file->getSize(),
+                        'type' => $file->getClientOriginalExtension(),
+                        'category' => 'Proposal',
+                        'uploader_id' => auth()->id(),
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('proposals.index')->with('success', 'Proposal updated successfully.');
     }
