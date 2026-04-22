@@ -4,6 +4,7 @@ namespace Modules\Admin\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use App\Skills\BrandingSkill;
 
 class BrandingController extends Controller
@@ -37,5 +38,20 @@ class BrandingController extends Controller
         $this->brandingSkill->updateBranding($request->all());
 
         return back()->with('success', 'Branding settings updated successfully.');
+    }
+
+    /**
+     * Programmatically create the storage link.
+     */
+    public function fixStorageLink()
+    {
+        try {
+            Artisan::call('storage:link');
+            $output = Artisan::output();
+            
+            return back()->with('success', 'Storage link fixed: ' . $output);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to fix storage link: ' . $e->getMessage());
+        }
     }
 }

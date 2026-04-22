@@ -69,7 +69,7 @@
                         <button class="btn btn-default dropdown-toggle" type="button" id="fyDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-calendar-alt mr-1"></i> Financial Year: {{ $fy }}
                         </button>
-                        <div class="dropdown-menu shadow">
+                        <div class="dropdown-menu dropdown-menu-right shadow">
                             <a class="dropdown-item" href="{{ url()->current() }}?view={{ $view }}&fy=2025-26">2025-26</a>
                             <a class="dropdown-item" href="{{ url()->current() }}?view={{ $view }}&fy=2026-27">2026-27</a>
                             <a class="dropdown-item" href="{{ url()->current() }}?view={{ $view }}&fy=2027-28">2027-28</a>
@@ -80,7 +80,7 @@
             <div class="card-body p-0">
                 <div class="table-responsive" style="max-height: 600px;">
                     <table class="table table-bordered table-striped table-hover m-0 table-sm" style="min-width: 1400px;">
-                        <thead class="bg-light sticky-top" style="z-index: 1020;">
+                        <thead class="bg-light sticky-top" style="z-index: 990;">
                             <tr class="text-center">
                                 <th rowspan="2" class="align-middle">Customer</th>
                                 <th rowspan="2" class="align-middle">Project Name</th>

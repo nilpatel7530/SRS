@@ -55,6 +55,22 @@ class InvoiceProcessingSkill extends AbstractSkill
     }
 
     /**
+     * Update an existing invoice with a new payment amount.
+     */
+    public function updatePayment(Invoice $invoice, array $data): Invoice
+    {
+        $newPayment = $data['payment_amount'] ?? 0;
+        $totalReceived = $invoice->payment_received + $newPayment;
+        
+        $invoice->update([
+            'payment_received' => $totalReceived,
+            'status' => $totalReceived >= $invoice->cel_total_with_gst ? 'paid' : 'pending'
+        ]);
+
+        return $invoice;
+    }
+
+    /**
      * Group project invoices by month.
      */
     public function groupProjectInvoicesByMonth(\Modules\Projects\Models\Project $project): \Illuminate\Support\Collection

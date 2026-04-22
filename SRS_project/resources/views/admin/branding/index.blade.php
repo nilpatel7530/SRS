@@ -9,6 +9,20 @@
 @section('content')
     @include('partials.alerts')
 
+    @if(!file_exists(public_path('storage')))
+        <div class="alert alert-warning alert-dismissible shadow-sm">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <h5><i class="icon fas fa-exclamation-triangle"></i> Action Required!</h5>
+            <p>The storage symbolic link appears to be missing on the server. If logos are not appearing, click the button below to fix it programmatically.</p>
+            <form action="{{ route('admin.branding.fixStorage') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-dark btn-sm">
+                    <i class="fas fa-link mr-1"></i> Fix Link Now
+                </button>
+            </form>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-md-6">
             <div class="card card-primary">

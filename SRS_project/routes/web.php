@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('projects/{project}/capex', [\Modules\Finance\Controllers\FinanceController::class, 'storeCapex'])->name('projects.storeCapex');
             Route::post('projects/{project}/opex', [\Modules\Finance\Controllers\FinanceController::class, 'storeOpex'])->name('projects.storeOpex');
             Route::post('projects/{project}/invoices', [\Modules\Finance\Controllers\FinanceController::class, 'storeInvoice'])->name('projects.storeInvoice');
+            Route::post('projects/{project}/invoices/{invoice}/payment', [\Modules\Finance\Controllers\FinanceController::class, 'updatePayment'])->name('projects.updateInvoicePayment');
             Route::post('projects/{project}/bg', [\Modules\Finance\Controllers\FinanceController::class, 'storeBG'])->name('projects.storeBG');
             Route::post('projects/{project}/target', [\Modules\Finance\Controllers\FinanceController::class, 'storeTarget'])->name('projects.storeTarget');
         });
@@ -77,6 +78,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Branding Settings
         Route::get('branding', [BrandingController::class, 'index'])->name('admin.branding.index');
         Route::post('branding', [BrandingController::class, 'update'])->name('admin.branding.update');
+        Route::post('branding/fix-storage', [BrandingController::class, 'fixStorageLink'])->name('admin.branding.fixStorage');
     });
 });
 

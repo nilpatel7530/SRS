@@ -108,6 +108,29 @@ class FinanceController extends Controller
         return back()->with('success', 'Invoice recorded successfully.');
     }
 
+    public function updatePayment(Request $request, $projectId, $invoiceId)
+    {
+        $project = Project::findOrFail($projectId);
+        $invoice = \Modules\Finance\Models\Invoice::findOrFail($invoiceId);
+        
+        $validated = $request->validate([
+            'payment_amount' => 'required|numeric|min:0',
+        ]);
+
+        $invoice = $this->invoiceSkill->updatePayment($invoice, $validated);
+        $this->auditSkill->logActivity($project, 'invoice', "Recorded Payment: {$validated['payment_amount']} for Invoice: {$invoice->vendor_invoice_no}. New Status: " . strtoupper($invoice->status));
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully.',
+                'data' => $invoice
+            ]);
+        }
+
+        return back()->with('success', 'Payment recorded successfully.');
+    }
+
     public function storeBG(Request $request, $projectId)
     {
         $project = Project::findOrFail($projectId);

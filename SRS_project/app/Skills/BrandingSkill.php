@@ -18,8 +18,22 @@ class BrandingSkill
         }
 
         if (isset($data['logo_img']) && $data['logo_img'] instanceof UploadedFile) {
-            $path = $data['logo_img']->store('branding', 'public');
-            Setting::set('app_logo', 'storage/' . $path);
+            try {
+                // Ensure the branding directory exists and is writable
+                if (!Storage::disk('public')->exists('branding')) {
+                    Storage::disk('public')->makeDirectory('branding');
+                }
+
+                $path = $data['logo_img']->store('branding', 'public');
+                
+                if ($path) {
+                    Setting::set('app_logo', 'storage/' . $path);
+                } else {
+                    \Illuminate\Support\Facades\Log::error('Branding logo upload failed: File could not be stored.');
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Branding logo upload exception: ' . $e->getMessage());
+            }
         }
     }
 

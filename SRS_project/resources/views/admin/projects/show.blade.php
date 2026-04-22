@@ -297,19 +297,29 @@
                             <div class="row">
                                 <div class="col-md-9">
                                     <table class="table table-striped">
-                                        <thead><tr><th>Invoice Nos (V/C)</th><th>Vendor Total</th><th>CEL Total</th><th>Received</th><th>Status</th><th>Date</th></tr></thead>
+                                        <thead><tr><th>Invoice Nos (V/C)</th><th>Vendor Total</th><th>CEL Total</th><th>Received</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
                                         <tbody id="invoices-table-body">
                                             @forelse($project->invoices as $invoice)
-                                                <tr>
+                                                <tr data-invoice-id="{{ $invoice->id }}">
                                                     <td>{{ $invoice->vendor_invoice_no }} / {{ $invoice->cel_invoice_no ?? '-' }}</td>
                                                     <td>{{ number_format($invoice->vendor_total_with_gst, 2) }}</td>
                                                     <td>{{ number_format($invoice->cel_total_with_gst, 2) }}</td>
                                                     <td>{{ number_format($invoice->payment_received, 2) }}</td>
-                                                    <td><span class="badge {{ $invoice->status == 'paid' ? 'badge-success' : 'badge-warning' }}">{{ ucfirst($invoice->status) }}</span></td>
+                                                    <td><span class="badge badge-status {{ $invoice->status == 'paid' ? 'badge-success' : 'badge-warning' }}">{{ ucfirst($invoice->status) }}</span></td>
                                                     <td>{{ $invoice->invoice_date }}</td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-xs btn-outline-success btn-record-payment" 
+                                                                data-id="{{ $invoice->id }}" 
+                                                                data-no="{{ $invoice->vendor_invoice_no }}"
+                                                                data-received="{{ $invoice->payment_received }}"
+                                                                data-total="{{ $invoice->cel_total_with_gst }}"
+                                                                title="Record Payment">
+                                                            <i class="fas fa-money-bill-wave"></i>
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="6">No Invoices.</td></tr>
+                                                <tr><td colspan="7">No Invoices.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -511,10 +521,47 @@
                                     </tbody>
                                 </table>
                             </div>
+                            </div>
                         </div>
                         @endcan
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Update Modal -->
+    <div class="modal fade" id="modal-record-payment">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Record Payment for Invoice <span id="payment-invoice-no"></span></h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="" method="POST" class="ajax-form" id="payment-update-form">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="info-box bg-light shadow-none border">
+                            <div class="info-box-content">
+                                <span class="info-box-text text-muted">Total Invoice Amount (CEL)</span>
+                                <span class="info-box-number text-primary" id="payment-total-amount">0.00</span>
+                                <span class="info-box-text text-muted mt-2">Already Received</span>
+                                <span class="info-box-number text-success" id="payment-received-amount">0.00</span>
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label>Payment Amount Received Now</label>
+                            <input type="number" step="0.01" name="payment_amount" class="form-control" placeholder="Enter amount..." required>
+                            <small class="text-muted">Recording this will increment the 'Received' total for this invoice.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Record Payment</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -549,6 +596,25 @@
 $(function() {
     var currentUserName = "{{ auth()->user()->name }}";
 
+    // Handle "Record Payment" button click (Delegated)
+    $(document).on('click', '.btn-record-payment', function() {
+        const id = $(this).data('id');
+        const no = $(this).data('no');
+        const received = $(this).data('received');
+        const total = $(this).data('total');
+        const projectId = "{{ $project->id }}";
+        
+        const $modal = $('#modal-record-payment');
+        const $form = $('#payment-update-form');
+        
+        $('#payment-invoice-no').text(no);
+        $('#payment-total-amount').text(parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $('#payment-received-amount').text(parseFloat(received).toLocaleString(undefined, {minimumFractionDigits: 2}));
+        
+        $form.attr('action', `/projects/${projectId}/invoices/${id}/payment`);
+        $modal.modal('show');
+    });
+
     // Shared AJAX submit handler
     $('.ajax-form').on('submit', function(e) {
         e.preventDefault();
@@ -577,20 +643,17 @@ $(function() {
                         showConfirmButton: false
                     });
 
-                    // Clear form
-                    $form[0].reset();
-                    if ($form.find('.select2').length) {
-                        $form.find('.select2').val('').trigger('change');
-                    }
-
                     // Update UI based on form ID
                     handleResponseData(formId, response.data);
                     
                     // Update dashboard widgets
-                    updateDashboardWidgets(formId, response.data);
+                    updateDashboardWidgets(formId, response.data, $form);
                     
                     // Add a log entry row automatically
-                    appendActivityLog(formId, response.data);
+                    appendActivityLog(formId, response.data, $form);
+
+                    // Clear form
+                    $form[0].reset();
                 }
             },
             error: function(xhr) {
@@ -675,15 +738,42 @@ $(function() {
                 tableBody = $('#invoices-table-body');
                 removeEmptyRow(tableBody);
                 const celInv = data.cel_invoice_no || '-';
-                rowHtml = `<tr>
+                rowHtml = `<tr data-invoice-id="${data.id}">
                     <td>${data.vendor_invoice_no} / ${celInv}</td>
                     <td>${parseFloat(data.vendor_total_with_gst || data.vendor_total).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td>${parseFloat(data.cel_total_with_gst || data.cel_total).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td>${parseFloat(data.payment_received).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td><span class="badge badge-warning text-capitalize">${data.status}</span></td>
+                    <td><span class="badge badge-status ${data.status == 'paid' ? 'badge-success' : 'badge-warning'} text-capitalize">${data.status}</span></td>
                     <td>${data.invoice_date}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-xs btn-outline-success btn-record-payment" 
+                                data-id="${data.id}" 
+                                data-no="${data.vendor_invoice_no}"
+                                data-received="${data.payment_received}"
+                                data-total="${data.cel_total_with_gst}"
+                                title="Record Payment">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </button>
+                    </td>
                 </tr>`;
                 tableBody.append(rowHtml);
+                break;
+
+            case 'payment-update-form':
+                const row = $(`tr[data-invoice-id="${data.id}"]`);
+                const formatNum = (n) => parseFloat(n).toLocaleString(undefined, {minimumFractionDigits: 2});
+                
+                // Update table row
+                row.find('td:nth-child(4)').text(formatNum(data.payment_received));
+                const badge = row.find('.badge-status');
+                badge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+                badge.removeClass('badge-warning badge-success').addClass(data.status === 'paid' ? 'badge-success' : 'badge-warning');
+                
+                // Update button data
+                row.find('.btn-record-payment').data('received', data.payment_received).attr('data-received', data.payment_received);
+                
+                // Close modal
+                $('#modal-record-payment').modal('hide');
                 break;
 
             case 'team-form':
@@ -724,7 +814,7 @@ $(function() {
         }
     }
 
-    function updateDashboardWidgets(formId, data) {
+    function updateDashboardWidgets(formId, data, $form) {
         const parse = (val) => parseFloat(val || 0);
         
         if (formId === 'capex-form') {
@@ -748,9 +838,23 @@ $(function() {
             elReceived.text(newReceived.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             elOutstanding.text(newOutstanding.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
         }
+        else if (formId === 'payment-update-form') {
+            const elReceived = $('#widget-received');
+            const elOutstanding = $('#widget-outstanding');
+            
+            const amountPaidNow = parse($form.find('input[name="payment_amount"]').val());
+            const currentReceived = parse(elReceived.text().replace(/,/g, ''));
+            const currentOutstanding = parse(elOutstanding.text().replace(/,/g, ''));
+
+            const newReceived = currentReceived + amountPaidNow;
+            const newOutstanding = currentOutstanding - amountPaidNow;
+
+            elReceived.text(newReceived.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            elOutstanding.text(newOutstanding.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        }
     }
 
-    function appendActivityLog(formId, data) {
+    function appendActivityLog(formId, data, $form) {
         const logsBody = $('#activity-logs-body');
         const detailsTimeline = $('#details-timeline');
         const teamList = $('#details-team-list');
@@ -816,6 +920,10 @@ $(function() {
                 break;
             case 'target-form':
                 addRow('target', `Updated financial targets for FY ${data.financial_year}. Total target: ${data.total_target}`);
+                break;
+            case 'payment-update-form':
+                const paidNow = $form.find('input[name="payment_amount"]').val();
+                addRow('invoice', `Recorded payment update: ${parseFloat(paidNow).toLocaleString(undefined, {minimumFractionDigits: 2})} for Invoice: ${data.vendor_invoice_no}. Total Received: ${parseFloat(data.payment_received).toLocaleString(undefined, {minimumFractionDigits: 2})}, Status: ${data.status.toUpperCase()}`);
                 break;
         }
     }

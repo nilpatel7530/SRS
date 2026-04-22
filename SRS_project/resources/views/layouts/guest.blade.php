@@ -14,7 +14,11 @@
 <body class="hold-transition login-page">
     <div class="login-box">
         <div class="login-logo">
-            <a href="/"><b>SRS</b>Project</a>
+            <a href="/">
+                <img src="{{ asset(config('adminlte.logo_img', 'vendor/adminlte/dist/img/AdminLTELogo.png')) }}" alt="{{ config('app.name', 'SRS') }} Logo" class="elevation-3 img-circle" style="width: 80px; height: 80px; object-fit: cover; margin-bottom: 10px;">
+                <br>
+                {!! config('adminlte.logo', '<b>SRS</b>Project') !!}
+            </a>
         </div>
         <div class="card">
             <div class="card-body login-card-body">
