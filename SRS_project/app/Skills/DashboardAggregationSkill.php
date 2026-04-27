@@ -34,6 +34,18 @@ class DashboardAggregationSkill extends AbstractSkill
             $activeBGs = $projects->flatMap->bankGuarantees->where('status', 'active');
             $pendingInvoices = $projects->flatMap->invoices->where('status', 'pending');
 
+            $now = now();
+            if ($now->month >= 4) {
+                $fyStart = $now->year;
+                $fyEnd = $now->year + 1;
+            } else {
+                $fyStart = $now->year - 1;
+                $fyEnd = $now->year;
+            }
+            $fyLabel = $fyStart . '-' . substr($fyEnd, -2);
+            $fyStartDate = \Carbon\Carbon::create($fyStart, 4, 1)->startOfDay();
+            $fyEndDate = \Carbon\Carbon::create($fyEnd, 3, 31)->endOfDay();
+
             return [
                 'total_projects' => $projects->count(),
                 'active_bgs' => $activeBGs->count(),
@@ -42,14 +54,19 @@ class DashboardAggregationSkill extends AbstractSkill
                 'total_invoiced' => $totalInvoiced,
                 'budget_utilization' => $totalInvoiced > 0 ? (int)round(($totalInvoiced / ($totalCapex + $totalOpex + 1)) * 100) : 0,
                 'expiring_bgs' => $activeBGs->filter(function($bg) {
-                    return \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false) <= 30;
+                    $days = \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false);
+                    return $days <= 30 && $days >= 0;
                 })->count(),
+                'proposals_count' => \Modules\Projects\Models\ProjectProposal::count(),
+                'invoice_count_fy' => \Modules\Finance\Models\Invoice::whereBetween('invoice_date', [$fyStartDate, $fyEndDate])->count(),
+                'fy_label' => $fyLabel,
                 'recent_cleared_count' => $projects->flatMap->invoices
                     ->where('status', 'paid')
                     ->where('updated_at', '>=', now()->subDays(7))
                     ->count(),
                 'portfolio_health' => $this->calculateHealth($activeBGs->filter(function($bg) {
-                    return \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false) <= 30;
+                    $days = \Carbon\Carbon::parse($bg->validity_date)->diffInDays(now(), false);
+                    return $days <= 30 && $days >= 0;
                 })->count(), $pendingInvoices->count()),
             ];
         });

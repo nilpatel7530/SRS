@@ -356,7 +356,7 @@ return [
             ],
         ],
         [
-            'text' => 'Departments',
+            'text' => 'ISDs',
             'url'  => 'departments',
             'icon' => 'fas fa-fw fa-building',
             'can'  => 'departments.access',

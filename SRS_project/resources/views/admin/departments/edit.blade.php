@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Edit Department')
+@section('title', 'Edit ISD')
 
 @section('content_header')
-    <h1>Edit Department: {{ $department->name }}</h1>
+    <h1>Edit ISD: {{ $department->name }}</h1>
 @stop
 
 @section('content')
@@ -13,13 +13,13 @@
             @method('PUT')
             <div class="card-body">
                 <div class="form-group">
-                    <label for="name">Department Name</label>
+                    <label for="name">ISD Name</label>
                     <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $department->name) }}" required>
                     @error('name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                 </div>
             </div>
             <div class="card-footer">
-                <button type="submit" class="btn btn-warning">Update Department</button>
+                <button type="submit" class="btn btn-warning">Update ISD</button>
                 <a href="{{ route('departments.index') }}" class="btn btn-default">Cancel</a>
             </div>
         </form>

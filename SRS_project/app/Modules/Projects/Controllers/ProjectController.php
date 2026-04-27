@@ -24,10 +24,11 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['department_id', 'type']);
+        $filters = $request->only(['search', 'department_id', 'financial_type', 'project_type']);
         $projects = $this->projectSkill->getUserPortfolio($request->user(), $filters);
+        $departments = Department::all();
         
-        return view('admin.projects.index', compact('projects'));
+        return view('admin.projects.index', compact('projects', 'departments'));
     }
 
     /**

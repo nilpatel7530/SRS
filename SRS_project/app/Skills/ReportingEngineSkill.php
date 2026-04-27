@@ -148,35 +148,63 @@ class ReportingEngineSkill extends AbstractSkill
     /**
      * Get data for Financial Reconciliation report.
      */
-    public function getFinancialReconciliationData(): array
+    public function getFinancialReconciliationData(?array $filters = []): array
     {
-        return Project::with(['department', 'invoices' => function($query) {
-            $query->orderBy('invoice_date', 'asc');
-        }])->get()->map(function($project) {
+        $query = Project::with(['department', 'invoices' => function($q) {
+            $q->orderBy('invoice_date', 'asc');
+        }]);
+
+        // Apply filters
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+        if (!empty($filters['start_date'])) {
+            $query->whereHas('invoices', function($q) use ($filters) {
+                $q->where('invoice_date', '>=', $filters['start_date']);
+            });
+        }
+        if (!empty($filters['end_date'])) {
+            $query->whereHas('invoices', function($q) use ($filters) {
+                $q->where('invoice_date', '<=', $filters['end_date']);
+            });
+        }
+
+        return $query->get()->map(function($project) {
             $invoicesData = $project->invoices->map(function($invoice) {
-                $deductions = ($invoice->tds_deduction ?? 0) + 
-                              ($invoice->gst_tds_deduction ?? 0) + 
-                              ($invoice->bank_charges ?? 0) + 
-                              ($invoice->ta_da ?? 0);
+                $custDeductions = ($invoice->customer_tds_it ?? 0) + 
+                                 ($invoice->customer_tds_gst ?? 0) + 
+                                 ($invoice->customer_ld ?? 0) + 
+                                 ($invoice->customer_any_other ?? 0);
+
+                $vendDeductions = ($invoice->tds_deduction ?? 0) + 
+                                 ($invoice->gst_tds_deduction ?? 0) + 
+                                 ($invoice->bank_charges ?? 0) + 
+                                 ($invoice->ta_da ?? 0);
                 
                 return [
                     'id' => $invoice->id,
                     'invoice_no' => $invoice->cel_invoice_no,
+                    'vendor_invoice_no' => $invoice->vendor_invoice_no,
                     'date' => $invoice->invoice_date,
                     'desc' => $invoice->work_description,
-                    'value' => $invoice->total_amount,
+                    'value' => $invoice->cel_total_with_gst,
                     'received' => $invoice->payment_received,
                     'received_date' => $invoice->customer_payment_date,
-                    'received_note' => $invoice->customer_payment_note,
-                    'tds' => $invoice->tds_deduction ?? 0,
-                    'gst_tds' => $invoice->gst_tds_deduction ?? 0,
-                    'bank_charges' => $invoice->bank_charges ?? 0,
-                    'ta_da' => $invoice->ta_da ?? 0,
-                    'total_deductions' => $deductions,
+                    'cust_tds_it' => $invoice->customer_tds_it ?? 0,
+                    'cust_tds_gst' => $invoice->customer_tds_gst ?? 0,
+                    'cust_ld' => $invoice->customer_ld ?? 0,
+                    'cust_other' => $invoice->customer_any_other ?? 0,
+                    'cust_total_deductions' => $custDeductions,
                     'vendor_name' => $invoice->vendor_name ?? 'N/A',
                     'vendor_paid' => $invoice->vendor_paid_amount ?? 0,
                     'vendor_date' => $invoice->vendor_payment_date,
-                    'net_margin' => ($invoice->payment_received ?? 0) - ($invoice->vendor_paid_amount ?? 0) - $deductions
+                    'vendor_note' => $invoice->vendor_payment_note,
+                    'vend_tds' => $invoice->tds_deduction ?? 0,
+                    'vend_gst_tds' => $invoice->gst_tds_deduction ?? 0,
+                    'vend_bank' => $invoice->bank_charges ?? 0,
+                    'vend_tada' => $invoice->ta_da ?? 0,
+                    'vend_total_deductions' => $vendDeductions,
+                    'net_margin' => ($invoice->payment_received ?? 0) - ($invoice->vendor_paid_amount ?? 0) - $vendDeductions
                 ];
             });
 

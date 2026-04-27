@@ -18,9 +18,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Department</label>
+                    <label>ISD</label>
                     <select class="form-control @error('department_id') is-invalid @enderror" name="department_id" required>
-                        <option value="">Select Department</option>
+                        <option value="">Select ISD</option>
                         @foreach($departments as $department)
                             <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
                                 {{ $department->name }}

@@ -57,6 +57,18 @@
                         @endforeach
                     </select>
                 </div>
+
+                <div class="form-group">
+                    <label>ISD</label>
+                    <select class="form-control" name="department_id">
+                        <option value="">-- Select ISD --</option>
+                        @foreach($departments as $department)
+                            <option value="{{ $department->id }}" {{ $user->department_id == $department->id ? 'selected' : '' }}>
+                                {{ $department->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <div class="card-footer">

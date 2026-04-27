@@ -31,8 +31,8 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-success shadow-sm">
                 <div class="inner">
-                    <h3>{{ number_format($stats['total_invoiced'], 0) }}</h3>
-                    <p>Total Billing (Actual)</p>
+                    <h3>{{ $stats['invoice_count_fy'] }}</h3>
+                    <p>Invoices (FY {{ $stats['fy_label'] ?? date('Y') }})</p>
                 </div>
                 <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
             </div>
@@ -40,17 +40,17 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning shadow-sm">
                 <div class="inner">
-                    <h3>{{ $stats['pending_invoices'] }}</h3>
-                    <p>Pending Invoices</p>
+                    <h3>{{ $stats['proposals_count'] }}</h3>
+                    <p>Total Proposals</p>
                 </div>
-                <div class="icon"><i class="fas fa-clock"></i></div>
+                <div class="icon"><i class="fas fa-file-contract"></i></div>
             </div>
         </div>
         <div class="col-lg-3 col-6">
             <div class="small-box bg-danger shadow-sm">
                 <div class="inner">
                     <h3>{{ $stats['expiring_bgs'] }}</h3>
-                    <p>BGs Expiring (30d)</p>
+                    <p>Expire BGs (30 Days)</p>
                 </div>
                 <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
             </div>

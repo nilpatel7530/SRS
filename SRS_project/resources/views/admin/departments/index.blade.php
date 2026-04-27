@@ -1,11 +1,11 @@
 @extends('adminlte::page')
 
-@section('title', 'Departments')
+@section('title', 'ISDs')
 
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
-        <h1>Departments Master Data</h1>
-        <a href="{{ route('departments.create') }}" class="btn btn-primary">Add Department</a>
+        <h1>ISDs Master Data</h1>
+        <a href="{{ route('departments.create') }}" class="btn btn-primary">Add ISD</a>
     </div>
 @stop
 
@@ -44,7 +44,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center">No master data configured. Add a department.</td>
+                            <td colspan="3" class="text-center">No master data configured. Add an ISD.</td>
                         </tr>
                     @endforelse
                 </tbody>

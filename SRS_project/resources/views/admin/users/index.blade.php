@@ -27,6 +27,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Roles</th>
+                        <th>ISD</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -41,6 +42,7 @@
                                     <span class="badge badge-info">{{ $role->name }}</span>
                                 @endforeach
                             </td>
+                            <td>{{ $user->department->name ?? 'N/A' }}</td>
                             <td>
                                 <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?');">

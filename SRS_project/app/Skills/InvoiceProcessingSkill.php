@@ -27,17 +27,40 @@ class InvoiceProcessingSkill extends AbstractSkill
         return $project->invoices()->create([
             'vendor_invoice_no' => $data['vendor_invoice_no'] ?? null,
             'cel_invoice_no' => $data['cel_invoice_no'] ?? null,
+            'work_description' => $data['work_description'] ?? null,
+            
+            // Vendor amounts & payouts
             'vendor_total' => $vendorTotal,
             'vendor_gst' => $vendorGst,
             'vendor_total_with_gst' => $vendorTotalWithGst,
+            'vendor_paid_amount' => $data['vendor_paid_amount'] ?? 0,
+            'vendor_payment_date' => $data['vendor_payment_date'] ?? null,
+            'vendor_payment_note' => $data['vendor_payment_note'] ?? null,
+            
+            // Vendor Deductions
+            'tds_deduction' => $data['tds_deduction'] ?? 0,
+            'gst_tds_deduction' => $data['gst_tds_deduction'] ?? 0,
+            'bank_charges' => $data['bank_charges'] ?? 0,
+            'ta_da' => $data['ta_da'] ?? 0,
+
+            // CEL amounts & receipts
             'cel_total' => $celTotal,
             'cel_gst' => $celGst,
             'cel_total_with_gst' => $celTotalWithGst,
             'payment_received' => $data['payment_received'] ?? 0,
+            'customer_payment_date' => $data['customer_payment_date'] ?? null,
+            'customer_payment_note' => $data['customer_payment_note'] ?? null,
+            
+            // Customer Deductions
+            'customer_tds_it' => $data['customer_tds_it'] ?? 0,
+            'customer_tds_gst' => $data['customer_tds_gst'] ?? 0,
+            'customer_ld' => $data['customer_ld'] ?? 0,
+            'customer_any_other' => $data['customer_any_other'] ?? 0,
+
             'invoice_date' => $data['invoice_date'] ?? now(),
             'remarks' => $data['remarks'] ?? null,
             'status' => ($data['payment_received'] ?? 0) >= $celTotalWithGst ? 'paid' : 'pending',
-            'total_amount' => $celTotalWithGst // Default total amount to CEL total with GST
+            'total_amount' => $celTotalWithGst 
         ]);
     }
 
@@ -59,13 +82,32 @@ class InvoiceProcessingSkill extends AbstractSkill
      */
     public function updatePayment(Invoice $invoice, array $data): Invoice
     {
-        $newPayment = $data['payment_amount'] ?? 0;
-        $totalReceived = $invoice->payment_received + $newPayment;
-        
-        $invoice->update([
-            'payment_received' => $totalReceived,
-            'status' => $totalReceived >= $invoice->cel_total_with_gst ? 'paid' : 'pending'
-        ]);
+        if (isset($data['type']) && $data['type'] === 'vendor') {
+            $newPayout = $data['payment_amount'] ?? 0;
+            $invoice->update([
+                'vendor_paid_amount' => $invoice->vendor_paid_amount + $newPayout,
+                'vendor_payment_date' => $data['payment_date'] ?? now(),
+                'vendor_payment_note' => $data['payment_note'] ?? null,
+                'tds_deduction' => $data['tds_deduction'] ?? $invoice->tds_deduction,
+                'gst_tds_deduction' => $data['gst_tds_deduction'] ?? $invoice->gst_tds_deduction,
+                'bank_charges' => $data['bank_charges'] ?? $invoice->bank_charges,
+                'ta_da' => $data['ta_da'] ?? $invoice->ta_da,
+            ]);
+        } else {
+            $newPayment = $data['payment_amount'] ?? 0;
+            $totalReceived = $invoice->payment_received + $newPayment;
+            
+            $invoice->update([
+                'payment_received' => $totalReceived,
+                'customer_payment_date' => $data['payment_date'] ?? now(),
+                'customer_payment_note' => $data['payment_note'] ?? null,
+                'customer_tds_it' => $data['customer_tds_it'] ?? $invoice->customer_tds_it,
+                'customer_tds_gst' => $data['customer_tds_gst'] ?? $invoice->customer_tds_gst,
+                'customer_ld' => $data['customer_ld'] ?? $invoice->customer_ld,
+                'customer_any_other' => $data['customer_any_other'] ?? $invoice->customer_any_other,
+                'status' => $totalReceived >= $invoice->cel_total_with_gst ? 'paid' : 'pending'
+            ]);
+        }
 
         return $invoice;
     }

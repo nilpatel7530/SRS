@@ -41,17 +41,25 @@ class ProjectManagementSkill extends AbstractSkill
             $hierarchySkill = app(RoleHierarchySkill::class);
             $subordinateIds = $hierarchySkill->getSubordinates($user)->pluck('id');
             
-            // User's own assigned projects OR projects assigned to subordinates
+            // User's own assigned projects OR projects assigned to subordinates OR projects in their ISD
             $query->where(function ($q) use ($user, $subordinateIds) {
                 $q->whereHas('users', function ($uq) use ($user) {
                     $uq->where('users.id', $user->id);
                 })->orWhereHas('users', function ($uq) use ($subordinateIds) {
                     $uq->whereIn('users.id', $subordinateIds);
-                });
+                })->orWhere('department_id', $user->department_id);
             });
         }
 
         // Apply filters
+        if (!empty($filters['search'])) {
+            $query->where('name', 'like', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
         if (!empty($filters['financial_type'])) {
             $query->where('financial_type', $filters['financial_type']);
         }
@@ -60,7 +68,7 @@ class ProjectManagementSkill extends AbstractSkill
             $query->where('project_type', $filters['project_type']);
         }
 
-        return $query->paginate(15);
+        return $query->latest()->paginate(15);
     }
 
     /**

@@ -16,7 +16,7 @@
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th>Customer / Project</th>
+                        <th>Tender Name</th>
                         <th>Type</th>
                         <th class="text-right">Value</th>
                         <th>State</th>

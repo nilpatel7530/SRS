@@ -38,9 +38,11 @@ class ReportController extends Controller
 
     public function reconciliation(Request $request)
     {
-        $reconciliationData = $this->reportingSkill->getFinancialReconciliationData();
+        $filters = $request->only(['department_id', 'start_date', 'end_date']);
+        $reconciliationData = $this->reportingSkill->getFinancialReconciliationData($filters);
+        $departments = \Modules\Projects\Models\Department::orderBy('name')->get();
 
-        return view('admin.reports.reconciliation', compact('reconciliationData'));
+        return view('admin.reports.reconciliation', compact('reconciliationData', 'departments', 'filters'));
     }
 
     public function exportCsv(Request $request)

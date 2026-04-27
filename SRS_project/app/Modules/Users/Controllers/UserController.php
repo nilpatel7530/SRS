@@ -8,12 +8,13 @@ use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Modules\Projects\Models\Department;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->get();
+        $users = User::with(['roles', 'department'])->get();
         return view('admin.users.index', compact('users'));
     }
 
@@ -21,7 +22,8 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $managers = User::with('roles')->get();
-        return view('admin.users.create', compact('roles', 'managers'));
+        $departments = Department::all();
+        return view('admin.users.create', compact('roles', 'managers', 'departments'));
     }
 
     public function store(Request $request)
@@ -31,14 +33,16 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'roles' => 'array',
-            'manager_id' => 'nullable|exists:users,id'
+            'manager_id' => 'nullable|exists:users,id',
+            'department_id' => 'nullable|exists:departments,id'
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'manager_id' => $request->manager_id
+            'manager_id' => $request->manager_id,
+            'department_id' => $request->department_id
         ]);
 
         if ($request->has('roles')) {
@@ -53,7 +57,8 @@ class UserController extends Controller
         $roles = Role::all();
         $userRoles = $user->roles->pluck('name')->toArray();
         $managers = User::where('id', '!=', $user->id)->with('roles')->get();
-        return view('admin.users.edit', compact('user', 'roles', 'userRoles', 'managers'));
+        $departments = Department::all();
+        return view('admin.users.edit', compact('user', 'roles', 'userRoles', 'managers', 'departments'));
     }
 
     public function update(Request $request, User $user)
@@ -63,13 +68,15 @@ class UserController extends Controller
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|min:8|confirmed',
             'roles' => 'array',
-            'manager_id' => 'nullable|exists:users,id|different:id'
+            'manager_id' => 'nullable|exists:users,id|different:id',
+            'department_id' => 'nullable|exists:departments,id'
         ]);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
             'manager_id' => $request->manager_id,
+            'department_id' => $request->department_id,
         ];
 
         if ($request->filled('password')) {

@@ -17,7 +17,7 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="name">Customer / Project Name</label>
+                                    <label for="name">Tender Name</label>
                                     <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $proposal->name) }}" required>
                                     @error('name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                 </div>

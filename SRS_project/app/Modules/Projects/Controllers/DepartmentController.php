@@ -27,7 +27,7 @@ class DepartmentController extends Controller
 
         Department::create($validated);
 
-        return redirect()->route('departments.index')->with('success', 'Department added successfully.');
+        return redirect()->route('departments.index')->with('success', 'ISD added successfully.');
     }
 
     public function edit(Department $department)
@@ -43,16 +43,16 @@ class DepartmentController extends Controller
 
         $department->update($validated);
 
-        return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
+        return redirect()->route('departments.index')->with('success', 'ISD updated successfully.');
     }
 
     public function destroy(Department $department)
     {
         if ($department->projects()->count() > 0) {
-            return redirect()->route('departments.index')->with('error', 'Cannot delete department as it has associated projects.');
+            return redirect()->route('departments.index')->with('error', 'Cannot delete ISD as it has associated projects.');
         }
 
         $department->delete();
-        return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
+        return redirect()->route('departments.index')->with('success', 'ISD deleted successfully.');
     }
 }

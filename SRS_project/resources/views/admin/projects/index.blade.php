@@ -11,6 +11,57 @@
 
 @section('content')
     @include('partials.alerts')
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form action="{{ route('projects.index') }}" method="GET" class="row">
+                <div class="col-md-3">
+                    <div class="form-group mb-0">
+                        <label>Search Project</label>
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Name..." value="{{ request('search') }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-0">
+                        <label>ISD</label>
+                        <select name="department_id" class="form-control form-control-sm">
+                            <option value="">All ISDs</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-0">
+                        <label>Financial Type</label>
+                        <select name="financial_type" class="form-control form-control-sm">
+                            <option value="">All Types</option>
+                            <option value="capex" {{ request('financial_type') == 'capex' ? 'selected' : '' }}>Capex</option>
+                            <option value="opex" {{ request('financial_type') == 'opex' ? 'selected' : '' }}>Opex</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-0">
+                        <label>Project Type</label>
+                        <select name="project_type" class="form-control form-control-sm">
+                            <option value="">All Types</option>
+                            <option value="service" {{ request('project_type') == 'service' ? 'selected' : '' }}>Service</option>
+                            <option value="supply" {{ request('project_type') == 'supply' ? 'selected' : '' }}>Supply</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                        <a href="{{ route('projects.index') }}" class="btn btn-sm btn-default">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body table-responsive p-0">
             <table class="table table-hover text-nowrap">
@@ -18,7 +69,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Department</th>
+                        <th>ISD</th>
                         <th>Financial Type</th>
                         <th>Project Type</th>
                         <th>Actions</th>
@@ -54,5 +105,10 @@
                 </tbody>
             </table>
         </div>
+        @if($projects->hasPages())
+            <div class="card-footer clearfix">
+                {{ $projects->appends(request()->query())->links() }}
+            </div>
+        @endif
     </div>
 @stop

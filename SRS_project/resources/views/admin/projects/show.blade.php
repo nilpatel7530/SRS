@@ -77,9 +77,9 @@
                     <ul class="nav nav-pills ml-auto p-2">
                         <li class="nav-item"><a class="nav-link active" href="#tab_details" data-toggle="tab">Details</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_finance" data-toggle="tab">Financials</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab_documents" data-toggle="tab">Documents</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#tab_documents" data-toggle="tab">Documents (C/V)</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_bgs" data-toggle="tab">Bank Guarantees</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab_invoices" data-toggle="tab">Invoices</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#tab_invoices" data-toggle="tab">Invoices (C/V)</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_targets" data-toggle="tab">Financial Targets</a></li>
                         <li class="nav-item"><a class="nav-link" href="#tab_team" data-toggle="tab">Team</a></li>
                         @can('administration.access')
@@ -95,7 +95,7 @@
                                 <div class="@can('administration.access') col-md-7 @else col-md-12 @endcan">
                                     <h5 class="mb-4 text-primary border-bottom pb-2"><i class="fas fa-info-circle"></i> Basic Metadata</h5>
                                     <div class="row mb-3">
-                                        <div class="col-sm-5 text-muted font-weight-bold"><i class="fas fa-building fa-fw mr-1"></i> Department</div>
+                                        <div class="col-sm-5 text-muted font-weight-bold"><i class="fas fa-building fa-fw mr-1"></i> ISD</div>
                                         <div class="col-sm-7">{{ $project->department->name ?? 'None' }}</div>
                                     </div>
                                     <div class="row mb-3">
@@ -210,17 +210,34 @@
                         <div class="tab-pane" id="tab_documents">
                             <div class="row">
                                 <div class="col-md-9">
-                                    <table class="table table-striped">
+                                    <h5 class="text-primary"><i class="fas fa-user-tie"></i> Customer Documents</h5>
+                                    <table class="table table-sm table-striped mb-4">
                                         <thead><tr><th>Name</th><th>Type</th><th>Actions</th></tr></thead>
-                                        <tbody id="documents-table-body">
-                                            @forelse($project->documents as $doc)
+                                        <tbody id="documents-customer-table-body">
+                                            @forelse($project->documents->where('category', 'customer') as $doc)
                                                 <tr>
                                                     <td>{{ $doc->file_name }}</td>
                                                     <td><span class="badge badge-secondary">{{ strtoupper($doc->type) }}</span></td>
-                                                    <td><a href="{{ route('documents.download', $doc->id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i> Download</a></td>
+                                                    <td><a href="{{ route('documents.download', $doc->id) }}" class="btn btn-xs btn-outline-primary"><i class="fas fa-download"></i> Download</a></td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="3">No documents attached.</td></tr>
+                                                <tr><td colspan="3" class="text-muted">No customer documents.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+
+                                    <h5 class="text-warning"><i class="fas fa-truck-loading"></i> Vendor Documents</h5>
+                                    <table class="table table-sm table-striped">
+                                        <thead><tr><th>Name</th><th>Type</th><th>Actions</th></tr></thead>
+                                        <tbody id="documents-vendor-table-body">
+                                            @forelse($project->documents->where('category', 'vendor') as $doc)
+                                                <tr>
+                                                    <td>{{ $doc->file_name }}</td>
+                                                    <td><span class="badge badge-secondary">{{ strtoupper($doc->type) }}</span></td>
+                                                    <td><a href="{{ route('documents.download', $doc->id) }}" class="btn btn-xs btn-outline-primary"><i class="fas fa-download"></i> Download</a></td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="3" class="text-muted">No vendor documents.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -230,20 +247,31 @@
                                     <form action="{{ route('documents.store', $project->id) }}" method="POST" enctype="multipart/form-data" class="ajax-form" id="documents-form">
                                         @csrf
                                         <div class="form-group">
-                                            <label>Document Type</label>
-                                            <select name="type" class="form-control" required>
-                                                <option value="po">Purchase Order (PO)</option>
-                                                <option value="bg">Bank Guarantee (BG)</option>
-                                                <option value="invoice">Invoice</option>
-                                                <option value="other">Other</option>
+                                            <label>Category</label>
+                                            <select name="category" class="form-control form-control-sm" required>
+                                                <option value="customer">Customer</option>
+                                                <option value="vendor">Vendor</option>
                                             </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Document Name</label>
+                                            <select name="type" class="form-control form-control-sm" id="document-type-select" required>
+                                                <option value="Purchase Order">Purchase Order</option>
+                                                <option value="BG">Bank Guarantee</option>
+                                                <option value="Agreement">Agreement</option>
+                                                <option value="Work Order">Work Order</option>
+                                                <option value="other">Other (Specify below)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" id="custom-type-group" style="display:none;">
+                                            <label>Specify Other Type</label>
+                                            <input type="text" name="custom_type" class="form-control form-control-sm" placeholder="Enter document type...">
                                         </div>
                                         <div class="form-group">
                                             <label>Select Files</label>
                                             <input type="file" name="files[]" class="form-control-file" multiple required>
-                                            <small class="text-muted">Max 50MB per file</small>
                                         </div>
-                                        <button type="submit" class="btn btn-sm btn-primary">Upload Files</button>
+                                        <button type="submit" class="btn btn-sm btn-primary btn-block">Upload Files</button>
                                     </form>
                                 </div>
                             </div>
@@ -296,50 +324,125 @@
                         <div class="tab-pane" id="tab_invoices">
                             <div class="row">
                                 <div class="col-md-9">
-                                    <table class="table table-striped">
-                                        <thead><tr><th>Invoice Nos (V/C)</th><th>Vendor Total</th><th>CEL Total</th><th>Received</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-                                        <tbody id="invoices-table-body">
-                                            @forelse($project->invoices as $invoice)
-                                                <tr data-invoice-id="{{ $invoice->id }}">
-                                                    <td>{{ $invoice->vendor_invoice_no }} / {{ $invoice->cel_invoice_no ?? '-' }}</td>
-                                                    <td>{{ number_format($invoice->vendor_total_with_gst, 2) }}</td>
-                                                    <td>{{ number_format($invoice->cel_total_with_gst, 2) }}</td>
-                                                    <td>{{ number_format($invoice->payment_received, 2) }}</td>
-                                                    <td><span class="badge badge-status {{ $invoice->status == 'paid' ? 'badge-success' : 'badge-warning' }}">{{ ucfirst($invoice->status) }}</span></td>
-                                                    <td>{{ $invoice->invoice_date }}</td>
-                                                    <td class="text-center">
-                                                        <button type="button" class="btn btn-xs btn-outline-success btn-record-payment" 
-                                                                data-id="{{ $invoice->id }}" 
-                                                                data-no="{{ $invoice->vendor_invoice_no }}"
-                                                                data-received="{{ $invoice->payment_received }}"
-                                                                data-total="{{ $invoice->cel_total_with_gst }}"
-                                                                title="Record Payment">
-                                                            <i class="fas fa-money-bill-wave"></i>
-                                                        </button>
-                                                    </td>
+                                    <h5 class="text-primary font-weight-bold"><i class="fas fa-file-invoice-dollar"></i> Customer Invoices (CEL)</h5>
+                                    <div class="table-responsive mb-4">
+                                        <table class="table table-sm table-striped table-bordered">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>Inv No</th>
+                                                    <th>Date</th>
+                                                    <th>Total (with GST)</th>
+                                                    <th>Received</th>
+                                                    <th>TDS (IT/GST)</th>
+                                                    <th>LD / Other</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
                                                 </tr>
-                                            @empty
-                                                <tr><td colspan="7">No Invoices.</td></tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody id="invoices-customer-table-body">
+                                                @forelse($project->invoices as $invoice)
+                                                    <tr data-invoice-id="{{ $invoice->id }}">
+                                                        <td>{{ $invoice->cel_invoice_no ?? '-' }}</td>
+                                                        <td>{{ $invoice->invoice_date }}</td>
+                                                        <td class="text-right">{{ number_format($invoice->cel_total_with_gst, 2) }}</td>
+                                                        <td class="text-right text-success font-weight-bold">{{ number_format($invoice->payment_received, 2) }}</td>
+                                                        <td class="text-right text-muted" style="font-size: 11px;">
+                                                            {{ number_format($invoice->customer_tds_it, 2) }} / {{ number_format($invoice->customer_tds_gst, 2) }}
+                                                        </td>
+                                                        <td class="text-right text-muted" style="font-size: 11px;">
+                                                            {{ number_format($invoice->customer_ld, 2) }} / {{ number_format($invoice->customer_any_other, 2) }}
+                                                        </td>
+                                                        <td class="text-center"><span class="badge badge-status {{ $invoice->status == 'paid' ? 'badge-success' : 'badge-warning' }}">{{ ucfirst($invoice->status) }}</span></td>
+                                                        <td class="text-center">
+                                                            <button type="button" class="btn btn-xs btn-outline-success btn-record-payment" 
+                                                                    data-id="{{ $invoice->id }}" 
+                                                                    data-type="customer"
+                                                                    data-no="{{ $invoice->cel_invoice_no }}"
+                                                                    data-received="{{ $invoice->payment_received }}"
+                                                                    data-total="{{ $invoice->cel_total_with_gst }}"
+                                                                    title="Record Receipt">
+                                                                <i class="fas fa-plus-circle"></i> Receipt
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr><td colspan="8" class="text-center text-muted">No customer invoices.</td></tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <h5 class="text-orange font-weight-bold"><i class="fas fa-hand-holding-usd"></i> Vendor Payouts</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped table-bordered">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>Inv No</th>
+                                                    <th>Work Description</th>
+                                                    <th>Total</th>
+                                                    <th>Paid</th>
+                                                    <th>Deductions (TDS/GST)</th>
+                                                    <th>Bank/TA/DA</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="invoices-vendor-table-body">
+                                                @forelse($project->invoices as $invoice)
+                                                    <tr data-invoice-id="{{ $invoice->id }}">
+                                                        <td>{{ $invoice->vendor_invoice_no }}</td>
+                                                        <td><small>{{ $invoice->work_description ?? '-' }}</small></td>
+                                                        <td class="text-right">{{ number_format($invoice->vendor_total_with_gst, 2) }}</td>
+                                                        <td class="text-right text-primary font-weight-bold">{{ number_format($invoice->vendor_paid_amount, 2) }}</td>
+                                                        <td class="text-right text-muted" style="font-size: 11px;">
+                                                            {{ number_format($invoice->tds_deduction, 2) }} / {{ number_format($invoice->gst_tds_deduction, 2) }}
+                                                        </td>
+                                                        <td class="text-right text-muted" style="font-size: 11px;">
+                                                            {{ number_format($invoice->bank_charges, 2) }} / {{ number_format($invoice->ta_da, 2) }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <button type="button" class="btn btn-xs btn-outline-primary btn-record-payment" 
+                                                                    data-id="{{ $invoice->id }}" 
+                                                                    data-type="vendor"
+                                                                    data-no="{{ $invoice->vendor_invoice_no }}"
+                                                                    data-received="{{ $invoice->vendor_paid_amount }}"
+                                                                    data-total="{{ $invoice->vendor_total_with_gst }}"
+                                                                    title="Record Payout">
+                                                                <i class="fas fa-paper-plane"></i> Payout
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr><td colspan="7" class="text-center text-muted">No vendor invoices.</td></tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                                 <div class="col-md-3 border-left">
-                                    <h5>Record Invoice</h5>
+                                    <h5>Record New Invoice</h5>
                                     <form action="{{ route('projects.storeInvoice', $project->id) }}" method="POST" class="ajax-form" id="invoices-form">
                                         @csrf
-                                        <div class="row">
-                                            <div class="col-6"><input type="text" name="vendor_invoice_no" class="form-control mb-2" placeholder="Vendor Inv #" required></div>
-                                            <div class="col-6"><input type="text" name="cel_invoice_no" class="form-control mb-2" placeholder="CEL Inv #"></div>
+                                        <div class="form-group">
+                                            <label>Work Description</label>
+                                            <input type="text" name="work_description" class="form-control form-control-sm" placeholder="Short description of work done" required>
                                         </div>
                                         <div class="row">
-                                            <div class="col-6"><input type="number" step="0.01" name="vendor_total" class="form-control mb-2" placeholder="Vendor Base" required></div>
-                                            <div class="col-6"><input type="number" step="0.01" name="cel_total" class="form-control mb-2" placeholder="CEL Base" required></div>
+                                            <div class="col-6"><div class="form-group"><label>Vendor Inv #</label><input type="text" name="vendor_invoice_no" class="form-control form-control-sm" required></div></div>
+                                            <div class="col-6"><div class="form-group"><label>CEL Inv #</label><input type="text" name="cel_invoice_no" class="form-control form-control-sm"></div></div>
                                         </div>
-                                        <div class="form-group"><input type="number" step="0.01" name="payment_received" class="form-control" placeholder="Payment Received" value="0"></div>
-                                        <div class="form-group"><input type="date" name="invoice_date" class="form-control" value="{{ date('Y-m-d') }}" required></div>
-                                        <div class="form-group"><textarea name="remarks" class="form-control" placeholder="Remarks"></textarea></div>
-                                        <button type="submit" class="btn btn-sm btn-primary btn-block">Save Invoice</button>
+                                        <div class="row">
+                                            <div class="col-6"><div class="form-group"><label>Vendor Base</label><input type="number" step="0.01" name="vendor_total" class="form-control form-control-sm" required></div></div>
+                                            <div class="col-6"><div class="form-group"><label>CEL Base</label><input type="number" step="0.01" name="cel_total" class="form-control form-control-sm" required></div></div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Invoice Date</label>
+                                            <input type="date" name="invoice_date" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Initial Remarks</label>
+                                            <textarea name="remarks" class="form-control form-control-sm" rows="2"></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary btn-block">Generate Invoice Record</button>
                                     </form>
                                 </div>
                             </div>
@@ -532,34 +635,85 @@
 
     <!-- Payment Update Modal -->
     <div class="modal fade" id="modal-record-payment">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">Record Payment for Invoice <span id="payment-invoice-no"></span></h4>
+                    <h4 class="modal-title"><span id="payment-modal-title">Record Payment</span> for Inv <span id="payment-invoice-no"></span></h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <form action="" method="POST" class="ajax-form" id="payment-update-form">
                     @csrf
+                    <input type="hidden" name="type" id="payment-type" value="customer">
                     <div class="modal-body">
-                        <div class="info-box bg-light shadow-none border">
-                            <div class="info-box-content">
-                                <span class="info-box-text text-muted">Total Invoice Amount (CEL)</span>
-                                <span class="info-box-number text-primary" id="payment-total-amount">0.00</span>
-                                <span class="info-box-text text-muted mt-2">Already Received</span>
-                                <span class="info-box-number text-success" id="payment-received-amount">0.00</span>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-box bg-light shadow-none border">
+                                    <div class="info-box-content text-center">
+                                        <span class="info-box-text text-muted">Total Amount</span>
+                                        <span class="info-box-number text-primary" id="payment-total-amount">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box bg-light shadow-none border">
+                                    <div class="info-box-content text-center">
+                                        <span class="info-box-text text-muted">Already Processed</span>
+                                        <span class="info-box-number text-success" id="payment-received-amount">0.00</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group mt-3">
-                            <label>Payment Amount Received Now</label>
-                            <input type="number" step="0.01" name="payment_amount" class="form-control" placeholder="Enter amount..." required>
-                            <small class="text-muted">Recording this will increment the 'Received' total for this invoice.</small>
+
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Amount Processed Now</label>
+                                    <input type="number" step="0.01" name="payment_amount" class="form-control" placeholder="Amount..." required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Date</label>
+                                    <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="payment-note-wrapper">
+                                <div class="form-group">
+                                    <label>Payment Note / Ref</label>
+                                    <input type="text" name="payment_note" class="form-control" placeholder="Cheque # / UTR...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Specific Deductions -->
+                        <div id="customer-deductions-section">
+                            <h6 class="border-bottom pb-2 mt-3 text-primary font-weight-bold">Deductions (Customer Side)</h6>
+                            <div class="row">
+                                <div class="col-md-2"><div class="form-group"><label>TDS (IT)</label><input type="number" step="0.01" name="customer_tds_it" class="form-control form-control-sm deduction-input" value="0"></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>TDS (GST)</label><input type="number" step="0.01" name="customer_tds_gst" class="form-control form-control-sm deduction-input" value="0"></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>LD</label><input type="number" step="0.01" name="customer_ld" class="form-control form-control-sm deduction-input" value="0"></div></div>
+                                <div class="col-md-3"><div class="form-group"><label>Any Other</label><input type="number" step="0.01" name="customer_any_other" class="form-control form-control-sm deduction-input" value="0"></div></div>
+                                <div class="col-md-3"><div class="form-group"><label>Total Deduction</label><input type="number" step="0.01" class="form-control form-control-sm bg-light" id="customer-deduction-total" value="0" readonly></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Vendor Specific Deductions -->
+                        <div id="vendor-deductions-section" style="display: none;">
+                            <h6 class="border-bottom pb-2 mt-3 text-orange font-weight-bold">Deductions (Vendor Side)</h6>
+                            <div class="row">
+                                <div class="col-md-2"><div class="form-group"><label>TDS</label><input type="number" step="0.01" name="tds_deduction" class="form-control form-control-sm vendor-deduction-input" value="0"></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>GST-TDS</label><input type="number" step="0.01" name="gst_tds_deduction" class="form-control form-control-sm vendor-deduction-input" value="0"></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Bank</label><input type="number" step="0.01" name="bank_charges" class="form-control form-control-sm vendor-deduction-input" value="0"></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>TA / DA</label><input type="number" step="0.01" name="ta_da" class="form-control form-control-sm vendor-deduction-input" value="0"></div></div>
+                                <div class="col-md-4"><div class="form-group"><label>Total Deduction</label><input type="number" step="0.01" class="form-control form-control-sm bg-light" id="vendor-deduction-total" value="0" readonly></div></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-between">
+                    <div class="modal-footer justify-content-between bg-light">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Record Payment</button>
+                        <button type="submit" class="btn btn-primary" id="payment-submit-btn">Record Receipt</button>
                     </div>
                 </form>
             </div>
@@ -599,6 +753,7 @@ $(function() {
     // Handle "Record Payment" button click (Delegated)
     $(document).on('click', '.btn-record-payment', function() {
         const id = $(this).data('id');
+        const type = $(this).data('type');
         const no = $(this).data('no');
         const received = $(this).data('received');
         const total = $(this).data('total');
@@ -607,15 +762,56 @@ $(function() {
         const $modal = $('#modal-record-payment');
         const $form = $('#payment-update-form');
         
+        $('#payment-type').val(type);
         $('#payment-invoice-no').text(no);
         $('#payment-total-amount').text(parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2}));
         $('#payment-received-amount').text(parseFloat(received).toLocaleString(undefined, {minimumFractionDigits: 2}));
         
+        if (type === 'vendor') {
+            $('#payment-modal-title').text('Record Vendor Payout');
+            $('#payment-submit-btn').text('Record Payout').removeClass('btn-primary').addClass('btn-info');
+            $('#customer-deductions-section').hide();
+            $('#vendor-deductions-section').show();
+            $('#payment-note-wrapper').show();
+        } else {
+            $('#payment-modal-title').text('Record Customer Receipt');
+            $('#payment-submit-btn').text('Record Receipt').removeClass('btn-info').addClass('btn-primary');
+            $('#customer-deductions-section').show();
+            $('#vendor-deductions-section').hide();
+            $('#payment-note-wrapper').hide();
+        }
+
         $form.attr('action', `/projects/${projectId}/invoices/${id}/payment`);
         $modal.modal('show');
     });
 
+    // Auto-calculate Customer Deductions
+    $(document).on('input', '.deduction-input', function() {
+        let total = 0;
+        $('#customer-deductions-section .deduction-input').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        $('#customer-deduction-total').val(total.toFixed(2));
+    });
+
+    // Auto-calculate Vendor Deductions
+    $(document).on('input', '.vendor-deduction-input', function() {
+        let total = 0;
+        $('#vendor-deductions-section .vendor-deduction-input').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        $('#vendor-deduction-total').val(total.toFixed(2));
+    });
+
     // Shared AJAX submit handler
+    $('#document-type-select').change(function() {
+        if ($(this).val() === 'other') {
+            $('#custom-type-group').show().find('input').attr('required', true);
+        } else {
+            $('#custom-type-group').hide().find('input').attr('required', false);
+        }
+    });
+
     $('.ajax-form').on('submit', function(e) {
         e.preventDefault();
         const $form = $(this);
@@ -644,7 +840,7 @@ $(function() {
                     });
 
                     // Update UI based on form ID
-                    handleResponseData(formId, response.data);
+                    handleResponseData(formId, response.data, $form);
                     
                     // Update dashboard widgets
                     updateDashboardWidgets(formId, response.data, $form);
@@ -678,7 +874,7 @@ $(function() {
         });
     });
 
-    function handleResponseData(formId, data) {
+    function handleResponseData(formId, data, $form) {
         let tableBody = '';
         let rowHtml = '';
 
@@ -707,17 +903,19 @@ $(function() {
                 break;
 
             case 'documents-form':
-                tableBody = $('#documents-table-body');
-                removeEmptyRow(tableBody);
+                const category = $form.find('select[name="category"]').val();
+                const targetBody = category === 'customer' ? $('#documents-customer-table-body') : $('#documents-vendor-table-body');
+                removeEmptyRow(targetBody);
                 // Data is an array for documents
                 data.forEach(doc => {
                     rowHtml = `<tr>
                         <td>${doc.file_name}</td>
                         <td><span class="badge badge-secondary">${doc.type.toUpperCase()}</span></td>
-                        <td><a href="/documents/download/${doc.id}" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i> Download</a></td>
+                        <td><a href="/documents/${doc.id}/download" class="btn btn-xs btn-outline-primary"><i class="fas fa-download"></i> Download</a></td>
                     </tr>`;
-                    tableBody.append(rowHtml);
+                    targetBody.append(rowHtml);
                 });
+                $('#custom-type-group').hide();
                 break;
 
             case 'bg-form':
@@ -735,44 +933,79 @@ $(function() {
                 break;
 
             case 'invoices-form':
-                tableBody = $('#invoices-table-body');
-                removeEmptyRow(tableBody);
-                const celInv = data.cel_invoice_no || '-';
-                rowHtml = `<tr data-invoice-id="${data.id}">
-                    <td>${data.vendor_invoice_no} / ${celInv}</td>
-                    <td>${parseFloat(data.vendor_total_with_gst || data.vendor_total).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td>${parseFloat(data.cel_total_with_gst || data.cel_total).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td>${parseFloat(data.payment_received).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td><span class="badge badge-status ${data.status == 'paid' ? 'badge-success' : 'badge-warning'} text-capitalize">${data.status}</span></td>
+                const custBody = $('#invoices-customer-table-body');
+                const vendBody = $('#invoices-vendor-table-body');
+                removeEmptyRow(custBody);
+                removeEmptyRow(vendBody);
+
+                const formatC = (n) => parseFloat(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                
+                // Add to Customer Table
+                const custRow = `<tr data-invoice-id="${data.id}">
+                    <td>${data.cel_invoice_no || '-'}</td>
                     <td>${data.invoice_date}</td>
+                    <td class="text-right">${formatC(data.cel_total_with_gst)}</td>
+                    <td class="text-right text-success font-weight-bold">${formatC(data.payment_received)}</td>
+                    <td class="text-right text-muted" style="font-size: 11px;">${formatC(data.customer_tds_it)} / ${formatC(data.customer_tds_gst)}</td>
+                    <td class="text-right text-muted" style="font-size: 11px;">${formatC(data.customer_ld)} / ${formatC(data.customer_any_other)}</td>
+                    <td class="text-center"><span class="badge badge-status ${data.status == 'paid' ? 'badge-success' : 'badge-warning'} text-capitalize">${data.status}</span></td>
                     <td class="text-center">
                         <button type="button" class="btn btn-xs btn-outline-success btn-record-payment" 
-                                data-id="${data.id}" 
-                                data-no="${data.vendor_invoice_no}"
-                                data-received="${data.payment_received}"
-                                data-total="${data.cel_total_with_gst}"
-                                title="Record Payment">
-                            <i class="fas fa-money-bill-wave"></i>
+                                data-id="${data.id}" data-type="customer" data-no="${data.cel_invoice_no}"
+                                data-received="${data.payment_received}" data-total="${data.cel_total_with_gst}" title="Record Receipt">
+                            <i class="fas fa-plus-circle"></i> Receipt
                         </button>
                     </td>
                 </tr>`;
-                tableBody.append(rowHtml);
+                custBody.append(custRow);
+
+                // Add to Vendor Table
+                const vendRow = `<tr data-invoice-id="${data.id}">
+                    <td>${data.vendor_invoice_no}</td>
+                    <td><small>${data.work_description || '-'}</small></td>
+                    <td class="text-right">${formatC(data.vendor_total_with_gst)}</td>
+                    <td class="text-right text-primary font-weight-bold">${formatC(data.vendor_paid_amount || 0)}</td>
+                    <td class="text-right text-muted" style="font-size: 11px;">${formatC(data.tds_deduction)} / ${formatC(data.gst_tds_deduction)}</td>
+                    <td class="text-right text-muted" style="font-size: 11px;">${formatC(data.bank_charges)} / ${formatC(data.ta_da)}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-xs btn-outline-primary btn-record-payment" 
+                                data-id="${data.id}" data-type="vendor" data-no="${data.vendor_invoice_no}"
+                                data-received="${data.vendor_paid_amount || 0}" data-total="${data.vendor_total_with_gst}" title="Record Payout">
+                            <i class="fas fa-paper-plane"></i> Payout
+                        </button>
+                    </td>
+                </tr>`;
+                vendBody.append(vendRow);
                 break;
 
             case 'payment-update-form':
-                const row = $(`tr[data-invoice-id="${data.id}"]`);
-                const formatNum = (n) => parseFloat(n).toLocaleString(undefined, {minimumFractionDigits: 2});
+                const rows = $(`tr[data-invoice-id="${data.id}"]`);
+                const fN = (n) => parseFloat(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
                 
-                // Update table row
-                row.find('td:nth-child(4)').text(formatNum(data.payment_received));
-                const badge = row.find('.badge-status');
-                badge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
-                badge.removeClass('badge-warning badge-success').addClass(data.status === 'paid' ? 'badge-success' : 'badge-warning');
+                rows.each(function() {
+                    const $r = $(this);
+                    const btn = $r.find('.btn-record-payment');
+                    const type = btn.data('type');
+                    
+                    if (type === 'customer') {
+                        $r.find('td:nth-child(4)').text(fN(data.payment_received));
+                        $r.find('td:nth-child(5)').text(`${fN(data.customer_tds_it)} / ${fN(data.customer_tds_gst)}`);
+                        $r.find('td:nth-child(6)').text(`${fN(data.customer_ld)} / ${fN(data.customer_any_other)}`);
+                        btn.data('received', data.payment_received).attr('data-received', data.payment_received);
+                    } else {
+                        $r.find('td:nth-child(4)').text(fN(data.vendor_paid_amount));
+                        $r.find('td:nth-child(5)').text(`${fN(data.tds_deduction)} / ${fN(data.gst_tds_deduction)}`);
+                        $r.find('td:nth-child(6)').text(`${fN(data.bank_charges)} / ${fN(data.ta_da)}`);
+                        btn.data('received', data.vendor_paid_amount).attr('data-received', data.vendor_paid_amount);
+                    }
+                    
+                    const badge = $r.find('.badge-status');
+                    if (badge.length) {
+                        badge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+                        badge.removeClass('badge-warning badge-success').addClass(data.status === 'paid' ? 'badge-success' : 'badge-warning');
+                    }
+                });
                 
-                // Update button data
-                row.find('.btn-record-payment').data('received', data.payment_received).attr('data-received', data.payment_received);
-                
-                // Close modal
                 $('#modal-record-payment').modal('hide');
                 break;
 
@@ -842,15 +1075,18 @@ $(function() {
             const elReceived = $('#widget-received');
             const elOutstanding = $('#widget-outstanding');
             
-            const amountPaidNow = parse($form.find('input[name="payment_amount"]').val());
-            const currentReceived = parse(elReceived.text().replace(/,/g, ''));
-            const currentOutstanding = parse(elOutstanding.text().replace(/,/g, ''));
+            const type = $form.find('input[name="type"]').val();
+            if (type === 'customer') {
+                const amountPaidNow = parse($form.find('input[name="payment_amount"]').val());
+                const currentReceived = parse(elReceived.text().replace(/,/g, ''));
+                const currentOutstanding = parse(elOutstanding.text().replace(/,/g, ''));
 
-            const newReceived = currentReceived + amountPaidNow;
-            const newOutstanding = currentOutstanding - amountPaidNow;
+                const newReceived = currentReceived + amountPaidNow;
+                const newOutstanding = currentOutstanding - amountPaidNow;
 
-            elReceived.text(newReceived.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-            elOutstanding.text(newOutstanding.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                elReceived.text(newReceived.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                elOutstanding.text(newOutstanding.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            }
         }
     }
 

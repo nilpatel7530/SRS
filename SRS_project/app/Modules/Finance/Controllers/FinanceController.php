@@ -87,11 +87,29 @@ class FinanceController extends Controller
         $validated = $request->validate([
             'vendor_invoice_no' => 'required|string',
             'cel_invoice_no' => 'nullable|string',
+            'work_description' => 'nullable|string',
             'vendor_total' => 'required|numeric|min:0',
             'cel_total' => 'required|numeric|min:0',
-            'payment_received' => 'nullable|numeric|min:0',
             'invoice_date' => 'required|date',
             'remarks' => 'nullable|string',
+            
+            // Customer Side
+            'payment_received' => 'nullable|numeric|min:0',
+            'customer_payment_date' => 'nullable|date',
+            'customer_payment_note' => 'nullable|string',
+            'customer_tds_it' => 'nullable|numeric|min:0',
+            'customer_tds_gst' => 'nullable|numeric|min:0',
+            'customer_ld' => 'nullable|numeric|min:0',
+            'customer_any_other' => 'nullable|numeric|min:0',
+            
+            // Vendor Side
+            'vendor_paid_amount' => 'nullable|numeric|min:0',
+            'vendor_payment_date' => 'nullable|date',
+            'vendor_payment_note' => 'nullable|string',
+            'tds_deduction' => 'nullable|numeric|min:0',
+            'gst_tds_deduction' => 'nullable|numeric|min:0',
+            'bank_charges' => 'nullable|numeric|min:0',
+            'ta_da' => 'nullable|numeric|min:0',
         ]);
 
         $invoice = $this->invoiceSkill->createInvoice($project, $validated);
@@ -115,10 +133,26 @@ class FinanceController extends Controller
         
         $validated = $request->validate([
             'payment_amount' => 'required|numeric|min:0',
+            'payment_date' => 'required|date',
+            'payment_note' => 'nullable|string',
+            'type' => 'required|in:customer,vendor',
+            
+            // Customer Deductions
+            'customer_tds_it' => 'nullable|numeric|min:0',
+            'customer_tds_gst' => 'nullable|numeric|min:0',
+            'customer_ld' => 'nullable|numeric|min:0',
+            'customer_any_other' => 'nullable|numeric|min:0',
+            
+            // Vendor Deductions
+            'tds_deduction' => 'nullable|numeric|min:0',
+            'gst_tds_deduction' => 'nullable|numeric|min:0',
+            'bank_charges' => 'nullable|numeric|min:0',
+            'ta_da' => 'nullable|numeric|min:0',
         ]);
 
         $invoice = $this->invoiceSkill->updatePayment($invoice, $validated);
-        $this->auditSkill->logActivity($project, 'invoice', "Recorded Payment: {$validated['payment_amount']} for Invoice: {$invoice->vendor_invoice_no}. New Status: " . strtoupper($invoice->status));
+        $typeLabel = $validated['type'] === 'vendor' ? 'Vendor Payout' : 'Customer Receipt';
+        $this->auditSkill->logActivity($project, 'invoice', "Recorded {$typeLabel}: {$validated['payment_amount']} for Invoice: {$invoice->vendor_invoice_no}. Status: " . strtoupper($invoice->status));
 
         if ($request->ajax()) {
             return response()->json([

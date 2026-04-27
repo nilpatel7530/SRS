@@ -14,7 +14,7 @@ class DocumentManagementSkill extends AbstractSkill
     /**
      * Store a document for a project (Private/Secure storage).
      */
-    public function uploadDocument(Project $project, UploadedFile $file, string $type): \Modules\Documents\Models\Document
+    public function uploadDocument(Project $project, UploadedFile $file, string $type, string $category = 'customer'): \Modules\Documents\Models\Document
     {
         // Store in private 'local' disk instead of 'public'
         $path = $file->store("projects/{$project->id}/{$type}", 'local');
@@ -23,18 +23,21 @@ class DocumentManagementSkill extends AbstractSkill
             'file_path' => $path,
             'file_name' => $file->getClientOriginalName(),
             'type' => $type,
+            'category' => $category,
+            'size' => $file->getSize(),
+            'uploader_id' => auth()->id(),
         ]);
     }
 
     /**
      * Handle multi-file upload.
      */
-    public function uploadMultiple(Project $project, array $files, string $type): array
+    public function uploadMultiple(Project $project, array $files, string $type, string $category = 'customer'): array
     {
         $uploaded = [];
         foreach ($files as $file) {
             if ($file instanceof UploadedFile) {
-                $uploaded[] = $this->uploadDocument($project, $file, $type);
+                $uploaded[] = $this->uploadDocument($project, $file, $type, $category);
             }
         }
         return $uploaded;

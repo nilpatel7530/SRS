@@ -25,13 +25,17 @@ class DocumentController extends Controller
         $project = Project::findOrFail($projectId);
         
         $request->validate([
-            'files.*' => 'required|file|max:51200', // 50MB limit as per SRS
+            'files.*' => 'required|file|max:51200',
             'type' => 'required|string|max:50',
+            'category' => 'required|in:customer,vendor',
+            'custom_type' => 'nullable|string|max:100',
         ]);
+
+        $type = ($request->type === 'other' && $request->custom_type) ? $request->custom_type : $request->type;
 
         $documents = [];
         if ($request->hasFile('files')) {
-            $documents = $this->documentSkill->uploadMultiple($project, $request->file('files'), $request->type);
+            $documents = $this->documentSkill->uploadMultiple($project, $request->file('files'), $type, $request->category);
             foreach ($documents as $doc) {
                 $this->auditSkill->logActivity($project, 'document', "Uploaded document: {$doc->file_name} (Type: " . strtoupper($doc->type) . ")");
             }
