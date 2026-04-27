@@ -204,6 +204,9 @@ class ReportingEngineSkill extends AbstractSkill
                     'vend_bank' => $invoice->bank_charges ?? 0,
                     'vend_tada' => $invoice->ta_da ?? 0,
                     'vend_total_deductions' => $vendDeductions,
+                    'vendor_amount' => $invoice->vendor_total_with_gst ?? 0,
+                    'remarks' => $invoice->remarks,
+                    'cel_total_payment' => ($invoice->payment_received ?? 0) + $custDeductions,
                     'net_margin' => ($invoice->payment_received ?? 0) - ($invoice->vendor_paid_amount ?? 0) - $vendDeductions
                 ];
             });
