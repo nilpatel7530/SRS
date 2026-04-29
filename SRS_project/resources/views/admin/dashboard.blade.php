@@ -79,7 +79,7 @@
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive" style="max-height: 600px;">
-                    <table class="table table-bordered table-striped table-hover m-0 table-sm" style="min-width: 1400px;">
+                    <table class="table table-bordered table-striped table-hover m-0 table-sm datatable" style="min-width: 1400px;">
                         <thead class="bg-light sticky-top" style="z-index: 990;">
                             <tr class="text-center">
                                 <th rowspan="2" class="align-middle">Customer</th>
@@ -163,6 +163,8 @@
     @endif
 @stop
 
+@section('plugins.Datatables', true)
+
 @section('css')
     <style>
         .small-box { border-radius: 10px; overflow: hidden; }
@@ -172,3 +174,7 @@
         th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 @stop
+
+@push('js')
+    @include('partials.datatables-init', ['responsive' => false])
+@endpush

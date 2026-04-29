@@ -109,11 +109,6 @@ div.dt-buttons { display: none !important; }
                   text: '',
                   className: 'srs-btn-export srs-btn-excel _srs-excel-{{ $uniqueKey }}',
                   title: document.title
-                },
-                { extend: 'print',
-                  text: '',
-                  className: 'srs-btn-export srs-btn-print _srs-print-{{ $uniqueKey }}',
-                  title: document.title
                 }
             ],
             @else
@@ -175,12 +170,22 @@ div.dt-buttons { display: none !important; }
         $('#srs-csv-{{ $uniqueKey }}').on('click', function(e) {
             e.preventDefault();
             console.log("Exporting CSV...");
-            table.button('._srs-csv-{{ $uniqueKey }}').trigger();
+            var btn = table.button('._srs-csv-{{ $uniqueKey }}');
+            if (btn && btn.node()) {
+                $(btn.node()).click();
+            } else {
+                console.error("CSV button not found in DataTables.");
+            }
         });
         $('#srs-excel-{{ $uniqueKey }}').on('click', function(e) {
             e.preventDefault();
             console.log("Exporting Excel...");
-            table.button('._srs-excel-{{ $uniqueKey }}').trigger();
+            var btn = table.button('._srs-excel-{{ $uniqueKey }}');
+            if (btn && btn.node()) {
+                $(btn.node()).click();
+            } else {
+                console.error("Excel button not found in DataTables.");
+            }
         });
         $('#srs-print-{{ $uniqueKey }}').on('click', function(e) {
             e.preventDefault();
