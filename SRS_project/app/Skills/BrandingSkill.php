@@ -27,7 +27,7 @@ class BrandingSkill
                 $path = $data['logo_img']->store('branding', 'public');
                 
                 if ($path) {
-                    Setting::set('app_logo', 'storage/' . $path);
+                    Setting::set('app_logo', $path);
                 } else {
                     \Illuminate\Support\Facades\Log::error('Branding logo upload failed: File could not be stored.');
                 }
@@ -37,14 +37,12 @@ class BrandingSkill
         }
     }
 
-    /**
-     * Get current branding settings.
-     */
     public function getSettings()
     {
+        $logo = Setting::get('app_logo');
         return [
             'app_name' => Setting::get('app_name', config('app.name', 'SRS')),
-            'app_logo' => Setting::get('app_logo', 'vendor/adminlte/dist/img/AdminLTELogo.png'),
+            'app_logo' => $logo ? '/storage/' . $logo : asset('vendor/adminlte/dist/img/AdminLTELogo.png'),
         ];
     }
 }

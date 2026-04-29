@@ -63,7 +63,8 @@ class ReportController extends Controller
         $columns = [
             'Project Name', 
             'Department', 
-            'Type', 
+            'Financial Type',
+            'Project Type', 
             'Total CAPEX', 
             'Total OPEX', 
             'Total Invoiced', 
@@ -81,7 +82,8 @@ class ReportController extends Controller
                 fputcsv($file, [
                     $row['project_name'],
                     $row['department'],
-                    $row['type'],
+                    $row['financial_type'] ?? 'N/A',
+                    $row['project_type'] ?? 'N/A',
                     $row['total_capex'],
                     $row['total_opex'],
                     $row['total_invoiced'],
@@ -98,3 +100,4 @@ class ReportController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 }
+

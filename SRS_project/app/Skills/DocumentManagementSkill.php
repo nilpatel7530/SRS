@@ -12,27 +12,40 @@ class DocumentManagementSkill extends AbstractSkill
     protected string $description = 'Handles uploads, file categorization, and storage abstraction.';
 
     /**
-     * Store a document for a project (Private/Secure storage).
+     * Store a document for a project or proposal (Private/Secure storage).
      */
-    public function uploadDocument(Project $project, UploadedFile $file, string $type, string $category = 'customer'): \Modules\Documents\Models\Document
+    public function uploadDocument($model, UploadedFile $file, string $type, string $category = 'customer'): \Modules\Documents\Models\Document
     {
-        // Store in private 'local' disk instead of 'public'
-        $path = $file->store("projects/{$project->id}/{$type}", 'local');
+        // Determine storage path based on model type
+        $modelType = ($model instanceof Project) ? 'projects' : 'proposals';
         
-        return $project->documents()->create([
+        // Store in private 'local' disk instead of 'public' for standard docs, 
+        // but for proposals we might want public if the user specifically asked for preview links.
+        // However, the skill should be consistent.
+        $path = $file->store("{$modelType}/{$model->id}/{$type}", 'public');
+        
+        $data = [
             'file_path' => $path,
             'file_name' => $file->getClientOriginalName(),
             'type' => $type,
             'category' => $category,
             'size' => $file->getSize(),
             'uploader_id' => auth()->id(),
-        ]);
+        ];
+
+        if ($model instanceof Project) {
+            $data['project_id'] = $model->id;
+        } else {
+            $data['proposal_id'] = $model->id;
+        }
+
+        return \Modules\Documents\Models\Document::create($data);
     }
 
     /**
      * Handle multi-file upload.
      */
-    public function uploadMultiple(Project $project, array $files, string $type, string $category = 'customer'): array
+    public function uploadMultiple($model, array $files, string $type, string $category = 'customer'): array
     {
         $uploaded = [];
         foreach ($files as $file) {

@@ -12,11 +12,54 @@ class PermissionController extends Controller
     /**
      * Display a listing of the permissions.
      */
-    public function index(\App\Services\PermissionRegistryService $registry)
+    public function index(Request $request, \App\Services\PermissionRegistryService $registry)
     {
         $registry->sync();
-        $permissions = Permission::all();
-        return view('admin.permissions.index', compact('permissions'));
+        if ($request->ajax()) {
+            $query = Permission::query();
+            
+            if ($request->module) {
+                $query->where('name', 'like', $request->module . '.%');
+            }
+            
+            if ($request->action_filter) {
+                $query->where('name', 'like', '%.' . $request->action_filter);
+            }
+
+            return \Yajra\DataTables\DataTables::of($query)
+                ->addColumn('module', function($permission) {
+                    $parts = explode('.', $permission->name);
+                    return ucfirst($parts[0] ?? 'Global');
+                })
+                ->addColumn('action_name', function($permission) {
+                    $parts = explode('.', $permission->name);
+                    return ucfirst($parts[1] ?? $permission->name);
+                })
+                ->addColumn('action', function($permission) {
+                    $actions = '<div class="btn-group">';
+                    if (auth()->user()->can('permissions.edit')) {
+                        $actions .= '<a href="' . route('permissions.edit', $permission->id) . '" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>';
+                    }
+                    if (auth()->user()->can('permissions.delete')) {
+                        $actions .= '<button type="button" class="btn btn-danger btn-xs delete-permission" data-id="' . $permission->id . '"><i class="fas fa-trash"></i></button>';
+                    }
+                    $actions .= '</div>';
+                    return $actions;
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+        
+        $allPermissions = Permission::all();
+        $modules = $allPermissions->map(function($p) {
+            return explode('.', $p->name)[0];
+        })->unique()->filter()->values();
+        
+        $actions = $allPermissions->map(function($p) {
+            return explode('.', $p->name)[1] ?? null;
+        })->unique()->filter()->values();
+
+        return view('admin.permissions.index', compact('modules', 'actions'));
     }
 
     /**
@@ -76,6 +119,10 @@ class PermissionController extends Controller
     public function destroy(Permission $permission)
     {
         $permission->delete();
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Permission deleted successfully.']);
+        }
 
         return redirect()->route('permissions.index')
             ->with('success', 'Permission deleted successfully.');

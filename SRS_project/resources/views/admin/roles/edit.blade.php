@@ -41,68 +41,96 @@
                     </div>
                 </div>
 
-                <div class="row mx-n2">
-                    @php
-                        $groupedPermissions = $permissions->groupBy(function($perm) {
-                            return explode('.', $perm->name)[0];
-                        });
-                        
-                        $icons = [
-                            'dashboard' => 'fa-tachometer-alt',
-                            'projects' => 'fa-project-diagram',
-                            'proposals' => 'fa-file-contract',
-                            'reports' => 'fa-chart-bar',
-                            'departments' => 'fa-building',
-                            'users' => 'fa-users',
-                            'roles' => 'fa-user-tag',
-                            'permissions' => 'fa-key',
-                            'administration' => 'fa-cogs',
-                            'manage-all-settings' => 'fa-user-shield'
-                        ];
-
-                        // Column Stacking Strategy
-                        $numCols = 4;
-                        $cols = array_fill(0, $numCols, []);
-                        $i = 0;
-                        foreach($groupedPermissions as $group => $groupPerms) {
-                            $cols[$i % $numCols][$group] = $groupPerms;
-                            $i++;
-                        }
-                    @endphp
-
-                    @foreach($cols as $colIdx => $columnGroups)
-                        <div class="col-xl-3 col-lg-6 col-md-6 px-2">
-                            @foreach($columnGroups as $group => $groupPermissions)
-                                <div class="card permission-card shadow-sm border-0 mb-3">
-                                    <div class="card-header glass-header py-2 px-3 d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas {{ $icons[$group] ?? 'fa-cube' }} fa-fw mr-2 text-primary opacity-75"></i>
-                                            <h6 class="mb-0 text-capitalize font-weight-bold text-dark small">{{ $group }}</h6>
-                                        </div>
-                                        @if(count($groupPermissions) > 1)
-                                            <button type="button" class="btn btn-xs lumina-btn-outline select-all" data-target="{{ $group }}-group" style="padding: 0 4px; font-size: 0.65rem;">
-                                                All
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <div class="card-body py-2 px-3" id="{{ $group }}-group">
-                                        @foreach($groupPermissions as $permission)
-                                            <div class="custom-control custom-switch lumina-switch mb-1">
-                                                <input class="custom-control-input" type="checkbox" name="permissions[]" 
-                                                       id="perm-{{ $permission->id }}" value="{{ $permission->name }}"
-                                                       {{ in_array($permission->name, $rolePermissions) ? 'checked' : '' }}>
-                                                <label class="custom-control-label" for="perm-{{ $permission->id }}">
-                                                    <span class="text-dark extra-small font-weight-500">
-                                                        {{ str_replace(['.', '_'], ' ', str_replace($group . '.', '', $permission->name)) }}
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endforeach
+                <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 font-weight-bold text-dark">
+                                <i class="fas fa-shield-alt text-primary mr-2"></i> Permissions Matrix
+                            </h6>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-xs btn-outline-primary select-all-global mr-2">Select All</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary deselect-all-global">Deselect All</button>
+                            </div>
                         </div>
-                    @endforeach
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0 permission-matrix">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 200px;" class="py-3 px-4">Module / Page</th>
+                                        <th class="text-center py-3">Access</th>
+                                        <th class="text-center py-3">View</th>
+                                        <th class="text-center py-3">Create</th>
+                                        <th class="text-center py-3">Edit</th>
+                                        <th class="text-center py-3">Delete</th>
+                                        <th class="text-center py-3">Others</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $standardActions = ['access', 'view', 'create', 'edit', 'delete'];
+                                        $grouped = $permissions->groupBy(function($perm) {
+                                            return explode('.', $perm->name)[0];
+                                        });
+                                    @endphp
+
+                                    @foreach($grouped as $module => $modulePermissions)
+                                        <tr>
+                                            <td class="font-weight-bold text-capitalize px-4">
+                                                <i class="fas {{ $icons[$module] ?? 'fa-cube' }} fa-fw mr-2 text-muted small"></i>
+                                                {{ $module }}
+                                            </td>
+                                            @foreach($standardActions as $action)
+                                                <td class="text-center">
+                                                    @php
+                                                        $perm = $modulePermissions->first(function($p) use ($module, $action) {
+                                                            return $p->name === "$module.$action";
+                                                        });
+                                                    @endphp
+                                                    @if($perm)
+                                                        <div class="custom-control custom-checkbox lumina-checkbox d-inline-block">
+                                                            <input type="checkbox" class="custom-control-input" 
+                                                                   name="permissions[]" id="perm-{{ $perm->id }}" 
+                                                                   value="{{ $perm->name }}"
+                                                                   {{ in_array($perm->name, $rolePermissions) ? 'checked' : '' }}>
+                                                            <label class="custom-control-label" for="perm-{{ $perm->id }}"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted opacity-25">&mdash;</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                            <td class="text-center">
+                                                @php
+                                                    $otherPerms = $modulePermissions->filter(function($p) use ($module, $standardActions) {
+                                                        $action = str_replace($module . '.', '', $p->name);
+                                                        return !in_array($action, $standardActions);
+                                                    });
+                                                @endphp
+                                                @foreach($otherPerms as $perm)
+                                                    <div class="d-block mb-1 text-left px-2">
+                                                        <div class="custom-control custom-checkbox lumina-checkbox d-inline-block">
+                                                            <input type="checkbox" class="custom-control-input" 
+                                                                   name="permissions[]" id="perm-{{ $perm->id }}" 
+                                                                   value="{{ $perm->name }}"
+                                                                   {{ in_array($perm->name, $rolePermissions) ? 'checked' : '' }}>
+                                                            <label class="custom-control-label" for="perm-{{ $perm->id }}">
+                                                                <small class="text-muted ml-1">{{ strtoupper(str_replace($module . '.', '', $perm->name)) }}</small>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                                @if($otherPerms->isEmpty())
+                                                    <span class="text-muted opacity-25">&mdash;</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -136,31 +164,6 @@
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
             background: var(--lumina-surface);
             overflow: hidden;
-        }
-
-        .glass-header {
-            background: rgba(255, 255, 255, 0.8) !important;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0, 86, 210, 0.1) !important;
-            border-top: 2px solid transparent;
-            transition: border-top-color 0.3s;
-        }
-
-        .permission-card {
-            border-radius: 10px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(0, 0, 0, 0.03) !important;
-        }
-
-        .permission-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.1);
-            border-color: rgba(0, 86, 210, 0.1) !important;
-        }
-
-        .permission-card:hover .glass-header {
-            border-top-color: var(--lumina-primary);
         }
 
         /* Compact Floating Label Input */
@@ -214,40 +217,35 @@
             left: 0;
         }
 
-        /* Compact Switch Styling */
-        .lumina-switch.custom-switch {
-            padding-left: 1.75rem;
-        }
-        
-        .lumina-switch .custom-control-label::before {
-            height: 0.9rem;
-            width: 1.5rem;
-            border-radius: 0.5rem;
-            left: -1.75rem;
-            background-color: #cbd5e1;
-            border-color: #cbd5e1;
-        }
-        
-        .lumina-switch .custom-control-label::after {
-            width: calc(0.9rem - 4px);
-            height: calc(0.9rem - 4px);
-            left: calc(-1.75rem + 2px);
-            border-radius: 0.5rem;
-        }
-        
-        .lumina-switch .custom-control-input:checked ~ .custom-control-label::after {
-            transform: translateX(0.6rem);
+        .permission-matrix th {
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            border-top: none !important;
         }
 
-        .lumina-switch .custom-control-input:checked ~ .custom-control-label::before {
-            border-color: var(--lumina-primary);
+        .permission-matrix td {
+            vertical-align: middle !important;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .lumina-checkbox.custom-checkbox .custom-control-label::before {
+            border-radius: 4px;
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .lumina-checkbox.custom-checkbox .custom-control-label::after {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .lumina-checkbox .custom-control-input:checked ~ .custom-control-label::before {
             background-color: var(--lumina-primary);
-        }
-
-        .lumina-switch .custom-control-label {
-            cursor: pointer;
-            line-height: 1.2;
-            padding-top: 2px;
+            border-color: var(--lumina-primary);
         }
 
         /* Buttons */
@@ -289,17 +287,12 @@
 @section('js')
     <script>
         $(document).ready(function() {
-            $('.select-all').on('click', function() {
-                var target = $('#' + $(this).data('target'));
-                var checkboxes = target.find('input[type="checkbox"]');
-                var allChecked = true;
-                
-                checkboxes.each(function() {
-                    if (!$(this).prop('checked')) allChecked = false;
-                });
-                
-                checkboxes.prop('checked', !allChecked);
-                $(this).text(!allChecked ? 'Deselect All' : 'Select All');
+            $('.select-all-global').on('click', function() {
+                $('.permission-matrix input[type="checkbox"]').prop('checked', true);
+            });
+
+            $('.deselect-all-global').on('click', function() {
+                $('.permission-matrix input[type="checkbox"]').prop('checked', false);
             });
         });
     </script>

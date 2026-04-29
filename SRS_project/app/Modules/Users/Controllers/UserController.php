@@ -9,13 +9,42 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Modules\Projects\Models\Department;
+use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['roles', 'department'])->get();
-        return view('admin.users.index', compact('users'));
+        if ($request->ajax()) {
+            $users = User::with(['roles', 'department'])->select('users.*');
+            return DataTables::of($users)
+                ->addColumn('roles_list', function($user) {
+                    return $user->roles->pluck('name')->map(function($role) {
+                        return '<span class="badge badge-info">'.$role.'</span>';
+                    })->implode(' ');
+                })
+                ->addColumn('status_label', function($user) {
+                    $class = $user->is_active ? 'success' : 'danger';
+                    $text = $user->is_active ? 'Active' : 'Inactive';
+                    return '<span class="badge badge-'.$class.'">'.$text.'</span>';
+                })
+                ->addColumn('actions', function($user) {
+                    $btns = '';
+                    if (auth()->user()->can('users.edit')) {
+                        $btns .= '<a href="'.route('users.edit', $user->id).'" class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></a>';
+                        $statusBtnClass = $user->is_active ? 'secondary' : 'success';
+                        $statusBtnText = $user->is_active ? 'Deactivate' : 'Activate';
+                        $btns .= '<button type="button" class="btn btn-sm btn-'.$statusBtnClass.' toggle-status" data-id="'.$user->id.'">'.$statusBtnText.'</button> ';
+                    }
+                    if (auth()->user()->can('users.delete') && $user->id !== auth()->id()) {
+                        $btns .= '<button type="button" class="btn btn-sm btn-danger delete-user" data-id="'.$user->id.'"><i class="fas fa-trash"></i></button>';
+                    }
+                    return $btns;
+                })
+                ->rawColumns(['roles_list', 'status_label', 'actions'])
+                ->make(true);
+        }
+        return view('admin.users.index');
     }
 
     public function create()
@@ -42,7 +71,8 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'manager_id' => $request->manager_id,
-            'department_id' => $request->department_id
+            'department_id' => $request->department_id,
+            'is_active' => $request->boolean('is_active', true),
         ]);
 
         if ($request->has('roles')) {
@@ -77,6 +107,7 @@ class UserController extends Controller
             'email' => $request->email,
             'manager_id' => $request->manager_id,
             'department_id' => $request->department_id,
+            'is_active' => $request->boolean('is_active', false),
         ];
 
         if ($request->filled('password')) {
@@ -97,10 +128,35 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         if ($user->id === auth()->id()) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You cannot delete yourself.'], 403);
+            }
             return redirect()->route('users.index')->with('error', 'You cannot delete yourself.');
         }
 
         $user->delete();
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'User deleted successfully.']);
+        }
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+    }
+
+    public function toggleStatus(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You cannot deactivate yourself.'], 403);
+            }
+            return redirect()->route('users.index')->with('error', 'You cannot deactivate yourself.');
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $status = $user->is_active ? 'activated' : 'deactivated';
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => "User has been $status successfully.", 'is_active' => $user->is_active]);
+        }
+        return redirect()->route('users.index')->with('success', "User has been $status successfully.");
     }
 }

@@ -5,7 +5,9 @@
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1>ISDs Master Data</h1>
-        <a href="{{ route('departments.create') }}" class="btn btn-primary">Add ISD</a>
+        @can('departments.create')
+            <a href="{{ route('departments.create') }}" class="btn btn-primary">Add ISD</a>
+        @endcan
     </div>
 @stop
 
@@ -19,8 +21,8 @@
     @endif
 
     <div class="card">
-        <div class="card-body table-responsive p-0">
-            <table class="table table-hover text-nowrap">
+        <div class="card-body">
+            <table class="table table-bordered table-striped datatable">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -29,26 +31,29 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($departments as $department)
+                    @foreach($departments as $department)
                         <tr>
                             <td>{{ $department->id }}</td>
                             <td>{{ $department->name }}</td>
                             <td>
-                                <a href="{{ route('departments.edit', $department->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="{{ route('departments.destroy', $department->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
+                                @can('departments.edit')
+                                    <a href="{{ route('departments.edit', $department->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                @endcan
+                                
+                                @can('departments.delete')
+                                    <form action="{{ route('departments.destroy', $department->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+                                @endcan
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="text-center">No master data configured. Add an ISD.</td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>
     </div>
 @stop
+
+@include('partials.datatables-init')

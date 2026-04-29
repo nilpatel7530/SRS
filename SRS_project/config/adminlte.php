@@ -325,18 +325,18 @@ return [
             'text' => 'Projects',
             'url'  => 'projects',
             'icon' => 'fas fa-fw fa-project-diagram',
-            'can'  => ['projects.view', 'projects.create', 'projects.edit', 'projects.delete'],
+            'can'  => ['projects.view', 'projects.create', 'projects.edit', 'projects.delete', 'projects.access'],
         ],
         [
             'text' => 'Proposals',
             'url'  => 'proposals',
             'icon' => 'fas fa-fw fa-file-contract',
-            'can'  => 'proposals.access',
+            'can'  => ['proposals.access', 'proposals.create', 'proposals.edit', 'proposals.delete'],
         ],
         [
             'text'    => 'Reports',
             'icon'    => 'fas fa-fw fa-chart-bar',
-            'can'     => 'reports.access',
+            'can'     => ['reports.access', 'reports.export'],
             'submenu' => [
                 [
                     'text' => 'Development Reports',
@@ -359,7 +359,7 @@ return [
             'text' => 'ISDs',
             'url'  => 'departments',
             'icon' => 'fas fa-fw fa-building',
-            'can'  => 'departments.access',
+            'can'  => ['departments.access', 'departments.create', 'departments.edit', 'departments.delete'],
         ],
         [
             'header' => 'ADMINISTRATION',
@@ -369,25 +369,25 @@ return [
             'text' => 'Users',
             'url'  => 'users',
             'icon' => 'fas fa-fw fa-users',
-            'can'  => 'users.access',
+            'can'  => ['users.access', 'users.create', 'users.edit', 'users.delete'],
         ],
         [
             'text' => 'Roles',
             'url'  => 'roles',
             'icon' => 'fas fa-fw fa-user-tag',
-            'can'  => 'roles.access',
+            'can'  => ['roles.access', 'roles.create', 'roles.edit', 'roles.delete'],
         ],
         [
             'text' => 'Permissions',
             'url'  => 'permissions',
             'icon' => 'fas fa-fw fa-key',
-            'can'  => 'permissions.access',
+            'can'  => ['permissions.access', 'permissions.create', 'permissions.edit', 'permissions.delete'],
         ],
         [
             'text' => 'System Branding',
             'url'  => 'branding',
             'icon' => 'fas fa-fw fa-paint-brush',
-            'can'  => 'administration.access',
+            'can'  => ['administration.access', 'branding.edit'],
         ],
     ],
     /*
@@ -426,22 +426,47 @@ return [
 
     'plugins' => [
         'Datatables' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',
                     'asset' => false,
-                    'location' => '//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js',
+                    'location' => 'https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js',
                 ],
                 [
                     'type' => 'js',
                     'asset' => false,
-                    'location' => '//cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js',
+                    'location' => 'https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js',
+                ],
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => 'https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js',
+                ],
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => 'https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap4.min.js',
+                ],
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                ],
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => 'https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js',
                 ],
                 [
                     'type' => 'css',
                     'asset' => false,
-                    'location' => '//cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css',
+                    'location' => 'https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css',
+                ],
+                [
+                    'type' => 'css',
+                    'asset' => false,
+                    'location' => 'https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css',
                 ],
             ],
         ],

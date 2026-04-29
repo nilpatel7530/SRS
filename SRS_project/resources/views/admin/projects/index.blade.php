@@ -5,7 +5,9 @@
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1>Projects</h1>
-        <a href="{{ route('projects.create') }}" class="btn btn-primary">Create Project</a>
+        @can('projects.create')
+            <a href="{{ route('projects.create') }}" class="btn btn-primary">Create Project</a>
+        @endcan
     </div>
 @stop
 
@@ -64,7 +66,7 @@
 
     <div class="card">
         <div class="card-body table-responsive p-0">
-            <table class="table table-hover text-nowrap">
+            <table class="table table-hover text-nowrap datatable">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -84,7 +86,9 @@
                             <td><span class="badge badge-info">{{ strtoupper($project->financial_type) }}</span></td>
                             <td>{{ ucfirst($project->project_type) }}</td>
                             <td>
-                                <a href="{{ route('projects.show', $project->id) }}" class="btn btn-sm btn-info">View</a>
+                                @can('projects.view')
+                                    <a href="{{ route('projects.show', $project->id) }}" class="btn btn-sm btn-info">View</a>
+                                @endcan
                                 @can('projects.edit')
                                     <a href="{{ route('projects.edit', $project->id) }}" class="btn btn-sm btn-warning">Edit</a>
                                 @endcan
@@ -99,16 +103,18 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center">No projects found.</td>
+                            <td colspan="6" class="text-center">No projects found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        @if($projects->hasPages())
+        @if(method_exists($projects, 'hasPages') && $projects->hasPages())
             <div class="card-footer clearfix">
                 {{ $projects->appends(request()->query())->links() }}
             </div>
         @endif
     </div>
+
+    @include('partials.datatables-init')
 @stop

@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('plugins.Datatables', true)
+
 @section('title', 'Financial Reconciliation')
 
 @section('content_header')
@@ -7,7 +9,6 @@
         <h1>Financial Reconciliation Report</h1>
         <div>
             <button onclick="window.print()" class="btn btn-default"><i class="fas fa-print mr-1"></i> Print</button>
-            <a href="{{ route('reports.export') }}" class="btn btn-success"><i class="fas fa-file-excel mr-1"></i> Export</a>
         </div>
     </div>
 @stop
@@ -45,13 +46,8 @@
     <div class="card card-outline card-primary shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover m-0" style="min-width: 2000px;">
+                <table class="table table-bordered table-striped table-hover m-0 datatable" style="min-width: 2000px;">
                     <thead class="bg-light text-xs text-center align-middle">
-                        <tr>
-                            <th colspan="19" class="text-uppercase py-3 bg-gray-light font-weight-bold" style="font-size: 1.1rem;">
-                                ISD Project Invoice and payment details
-                            </th>
-                        </tr>
                         <tr>
                             <th rowspan="2" style="width: 150px; vertical-align: middle;">Project Name</th>
                             <th rowspan="2" style="width: 50px; vertical-align: middle;">S.No.</th>
@@ -83,14 +79,18 @@
                     </thead>
                     <tbody class="text-sm">
                         @php $globalSerial = 1; @endphp
-                        @forelse($reconciliationData as $project)
+                        @foreach($reconciliationData as $project)
                             @if(count($project['invoices']) > 0)
                                 @foreach($project['invoices'] as $index => $invoice)
                                     <tr>
                                         @if($index === 0)
-                                            <td rowspan="{{ count($project['invoices']) }}" class="align-middle">
+                                            <td class="align-middle border-bottom-0 pb-0">
                                                 <strong>{{ $project['project_name'] }}</strong>
                                                 <br><small class="text-muted">{{ $project['customer'] }}</small>
+                                            </td>
+                                        @else
+                                            <td class="align-middle border-top-0 pt-0 text-muted">
+                                                <small>{{ $project['project_name'] }}</small>
                                             </td>
                                         @endif
                                         <td class="text-center">{{ $globalSerial++ }}</td>
@@ -118,11 +118,7 @@
                                     </tr>
                                 @endforeach
                             @endif
-                        @empty
-                            <tr>
-                                <td colspan="19" class="text-center py-4 text-muted italic">No invoices recorded for the selected criteria.</td>
-                            </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -149,3 +145,5 @@
         }
     </style>
 @stop
+
+@include('partials.datatables-init', ['responsive' => false])

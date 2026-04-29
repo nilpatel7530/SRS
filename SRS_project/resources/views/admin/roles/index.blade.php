@@ -5,7 +5,9 @@
 @section('content_header')
     <div class="d-flex justify-content-between">
         <h1>Roles</h1>
-        <a href="{{ route('roles.create') }}" class="btn btn-primary">Create Role</a>
+        @can('roles.create')
+            <a href="{{ route('roles.create') }}" class="btn btn-primary">Create Role</a>
+        @endcan
     </div>
 @stop
 
@@ -19,40 +21,57 @@
     @endif
 
     <div class="card">
-        <div class="card-body table-responsive p-0">
-            <table class="table table-hover text-nowrap">
+        <div class="card-body">
+            <table class="table table-bordered table-striped" id="roles-table">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Permissions</th>
+                        <th>Permissions Count</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach($roles as $role)
-                        <tr>
-                            <td>{{ $role->id }}</td>
-                            <td>{{ $role->name }}</td>
-                            <td>
-                                @foreach($role->permissions as $permission)
-                                    <span class="badge badge-info">{{ $permission->name }}</span>
-                                @endforeach
-                            </td>
-                            <td>
-                                <a href="{{ route('roles.edit', $role->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                                @if($role->name !== 'Admin')
-                                    <form action="{{ route('roles.destroy', $role->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                    </form>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
 @stop
+
+@push('js')
+    @include('partials.datatables-init', [
+        'id' => 'roles-table',
+        'ajaxUrl' => route('roles.index'),
+        'hideExports' => true,
+        'columns' => [
+            ['data' => 'id', 'name' => 'id'],
+            ['data' => 'name', 'name' => 'name'],
+            ['data' => 'permissions_count', 'name' => 'permissions_count', 'orderable' => false, 'searchable' => false],
+            ['data' => 'action', 'name' => 'action', 'orderable' => false, 'searchable' => false]
+        ]
+    ])
+
+    <script>
+        $(document).on('click', '.delete-role', function() {
+            var id = $(this).data('id');
+            if (confirm('Are you sure you want to delete this role?')) {
+                $.ajax({
+                    url: "{{ url('roles') }}/" + id,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            $('#roles-table').DataTable().ajax.reload();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        toastr.error(xhr.responseJSON.message || 'Something went wrong');
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

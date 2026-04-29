@@ -72,6 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Users and Roles Access
     Route::middleware('can:administration.access')->group(function() {
         Route::resource('users', UserController::class)->middleware('can:users.access');
+        Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus')->middleware('can:users.access');
         Route::resource('roles', RoleController::class)->middleware('can:roles.access');
         Route::resource('permissions', \Modules\Roles\Controllers\PermissionController::class)->middleware('can:permissions.access');
         

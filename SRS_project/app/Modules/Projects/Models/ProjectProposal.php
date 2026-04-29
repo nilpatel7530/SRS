@@ -11,6 +11,7 @@ class ProjectProposal extends Model
 {
     protected $fillable = [
         'name',
+        'project_type',
         'state',
         'description_of_work',
         'vendor_name',

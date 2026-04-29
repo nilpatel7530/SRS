@@ -36,7 +36,10 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 if ($appLogo) {
-                    config(['adminlte.logo_img' => $appLogo]);
+                    $logoUrl = (filter_var($appLogo, FILTER_VALIDATE_URL)) 
+                        ? $appLogo 
+                        : '/storage/' . $appLogo;
+                    config(['adminlte.logo_img' => $logoUrl]);
                 }
             }
         } catch (\Exception $e) {

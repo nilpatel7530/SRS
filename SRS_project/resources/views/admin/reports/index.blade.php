@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('plugins.Datatables', true)
+
 @section('title', 'Reports')
 
 @section('content_header')
@@ -8,9 +10,6 @@
         <div>
             <a href="{{ route('reports.reconciliation') }}" class="btn btn-primary mr-2">
                 <i class="fas fa-balance-scale"></i> Reconciliation Report
-            </a>
-            <a href="{{ route('reports.export', request()->query()) }}" class="btn btn-success">
-                <i class="fas fa-file-csv"></i> Export to CSV
             </a>
         </div>
     </div>
@@ -67,7 +66,7 @@
             </div>
         </div>
         <div class="card-body table-responsive p-0">
-            <table class="table table-hover table-bordered table-striped m-0">
+            <table class="table table-hover table-bordered table-striped m-0 datatable">
                 <thead class="bg-light">
                     <tr>
                         <th style="min-width: 200px;">Project Name</th>
@@ -108,7 +107,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="20" class="text-center p-4">No projects found for the selected criteria.</td>
+                            <td colspan="{{ 7 + count(array_keys(current($reportData)['month_wise'] ?? [])) }}" class="text-center p-4">No projects found for the selected criteria.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -126,3 +125,5 @@
         }
     </style>
 @stop
+
+@include('partials.datatables-init')

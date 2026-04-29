@@ -40,67 +40,94 @@
                     </div>
                 </div>
 
-                <div class="row mx-n2">
-                    @php
-                        $groupedPermissions = $permissions->groupBy(function($perm) {
-                            return explode('.', $perm->name)[0];
-                        });
-                        
-                        $icons = [
-                            'dashboard' => 'fa-tachometer-alt',
-                            'projects' => 'fa-project-diagram',
-                            'proposals' => 'fa-file-contract',
-                            'reports' => 'fa-chart-bar',
-                            'departments' => 'fa-building',
-                            'users' => 'fa-users',
-                            'roles' => 'fa-user-tag',
-                            'permissions' => 'fa-key',
-                            'administration' => 'fa-cogs',
-                            'manage-all-settings' => 'fa-user-shield'
-                        ];
-
-                        // Column Stacking Strategy
-                        $numCols = 4;
-                        $cols = array_fill(0, $numCols, []);
-                        $i = 0;
-                        foreach($groupedPermissions as $group => $groupPerms) {
-                            $cols[$i % $numCols][$group] = $groupPerms;
-                            $i++;
-                        }
-                    @endphp
-
-                    @foreach($cols as $colIdx => $columnGroups)
-                        <div class="col-xl-3 col-lg-6 col-md-6 px-2">
-                            @foreach($columnGroups as $group => $groupPermissions)
-                                <div class="card permission-card shadow-sm border-0 mb-3">
-                                    <div class="card-header glass-header py-2 px-3 d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas {{ $icons[$group] ?? 'fa-cube' }} fa-fw mr-2 text-primary opacity-75"></i>
-                                            <h6 class="mb-0 text-capitalize font-weight-bold text-dark small">{{ $group }}</h6>
-                                        </div>
-                                        @if(count($groupPermissions) > 1)
-                                            <button type="button" class="btn btn-xs lumina-btn-outline select-all" data-target="{{ $group }}-group" style="padding: 0 4px; font-size: 0.65rem;">
-                                                All
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <div class="card-body py-2 px-3" id="{{ $group }}-group">
-                                        @foreach($groupPermissions as $permission)
-                                            <div class="custom-control custom-switch lumina-switch mb-1">
-                                                <input class="custom-control-input" type="checkbox" name="permissions[]" 
-                                                       id="perm-{{ $permission->id }}" value="{{ $permission->name }}">
-                                                <label class="custom-control-label" for="perm-{{ $permission->id }}">
-                                                    <span class="text-dark extra-small font-weight-500">
-                                                        {{ str_replace(['.', '_'], ' ', str_replace($group . '.', '', $permission->name)) }}
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endforeach
+                <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 font-weight-bold text-dark">
+                                <i class="fas fa-shield-alt text-primary mr-2"></i> Permissions Matrix
+                            </h6>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-xs btn-outline-primary select-all-global mr-2">Select All</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary deselect-all-global">Deselect All</button>
+                            </div>
                         </div>
-                    @endforeach
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0 permission-matrix">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 200px;" class="py-3 px-4">Module / Page</th>
+                                        <th class="text-center py-3">Access</th>
+                                        <th class="text-center py-3">View</th>
+                                        <th class="text-center py-3">Create</th>
+                                        <th class="text-center py-3">Edit</th>
+                                        <th class="text-center py-3">Delete</th>
+                                        <th class="text-center py-3">Others</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $standardActions = ['access', 'view', 'create', 'edit', 'delete'];
+                                        $grouped = $permissions->groupBy(function($perm) {
+                                            return explode('.', $perm->name)[0];
+                                        });
+                                    @endphp
+
+                                    @foreach($grouped as $module => $modulePermissions)
+                                        <tr>
+                                            <td class="font-weight-bold text-capitalize px-4">
+                                                <i class="fas {{ $icons[$module] ?? 'fa-cube' }} fa-fw mr-2 text-muted small"></i>
+                                                {{ $module }}
+                                            </td>
+                                            @foreach($standardActions as $action)
+                                                <td class="text-center">
+                                                    @php
+                                                        $perm = $modulePermissions->first(function($p) use ($module, $action) {
+                                                            return $p->name === "$module.$action";
+                                                        });
+                                                    @endphp
+                                                    @if($perm)
+                                                        <div class="custom-control custom-checkbox lumina-checkbox d-inline-block">
+                                                            <input type="checkbox" class="custom-control-input" 
+                                                                   name="permissions[]" id="perm-{{ $perm->id }}" 
+                                                                   value="{{ $perm->name }}">
+                                                            <label class="custom-control-label" for="perm-{{ $perm->id }}"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted opacity-25">&mdash;</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                            <td class="text-center">
+                                                @php
+                                                    $otherPerms = $modulePermissions->filter(function($p) use ($module, $standardActions) {
+                                                        $action = str_replace($module . '.', '', $p->name);
+                                                        return !in_array($action, $standardActions);
+                                                    });
+                                                @endphp
+                                                @foreach($otherPerms as $perm)
+                                                    <div class="d-block mb-1 text-left px-2">
+                                                        <div class="custom-control custom-checkbox lumina-checkbox d-inline-block">
+                                                            <input type="checkbox" class="custom-control-input" 
+                                                                   name="permissions[]" id="perm-{{ $perm->id }}" 
+                                                                   value="{{ $perm->name }}">
+                                                            <label class="custom-control-label" for="perm-{{ $perm->id }}">
+                                                                <small class="text-muted ml-1">{{ strtoupper(str_replace($module . '.', '', $perm->name)) }}</small>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                                @if($otherPerms->isEmpty())
+                                                    <span class="text-muted opacity-25">&mdash;</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 

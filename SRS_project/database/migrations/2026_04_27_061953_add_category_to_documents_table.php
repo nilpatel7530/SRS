@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('documents', function (Blueprint $table) {
-            $table->string('category', 20)->default('customer')->after('type');
-        });
+        if (!Schema::hasColumn('documents', 'category')) {
+            Schema::table('documents', function (Blueprint $table) {
+                $table->string('category', 20)->default('customer')->after('type');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('documents', function (Blueprint $table) {
-            $table->dropColumn('category');
-        });
+        if (Schema::hasColumn('documents', 'category')) {
+            Schema::table('documents', function (Blueprint $table) {
+                $table->dropColumn('category');
+            });
+        }
     }
 };

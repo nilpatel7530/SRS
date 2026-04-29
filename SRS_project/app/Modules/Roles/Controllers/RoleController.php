@@ -10,11 +10,27 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
-    public function index(\App\Services\PermissionRegistryService $registry)
+    public function index(Request $request, \App\Services\PermissionRegistryService $registry)
     {
         $registry->sync();
-        $roles = Role::with('permissions')->get();
-        return view('admin.roles.index', compact('roles'));
+        if ($request->ajax()) {
+            $roles = Role::withCount('permissions');
+            return \Yajra\DataTables\DataTables::of($roles)
+                ->addColumn('action', function($role) {
+                    $actions = '<div class="btn-group">';
+                    if (auth()->user()->can('roles.edit')) {
+                        $actions .= '<a href="' . route('roles.edit', $role->id) . '" class="btn btn-info btn-xs"><i class="fas fa-edit"></i></a>';
+                    }
+                    if (auth()->user()->can('roles.delete') && $role->name !== 'Admin') {
+                        $actions .= '<button type="button" class="btn btn-danger btn-xs delete-role" data-id="' . $role->id . '"><i class="fas fa-trash"></i></button>';
+                    }
+                    $actions .= '</div>';
+                    return $actions;
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+        return view('admin.roles.index');
     }
 
     public function create(\App\Services\PermissionRegistryService $registry)
@@ -69,9 +85,15 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         if ($role->name === 'Admin') {
-            return redirect()->route('roles.index')->with('error', 'Cannot delete the Admin role.');
+            return response()->json(['success' => false, 'message' => 'Cannot delete the Admin role.'], 403);
         }
+        
         $role->delete();
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Role deleted successfully.']);
+        }
+
         return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
     }
 }

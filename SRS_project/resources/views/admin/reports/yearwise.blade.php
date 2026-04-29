@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('plugins.Datatables', true)
+
 @section('title', 'YearWise Dashboard')
 
 @section('content_header')
@@ -30,7 +32,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover m-0" style="min-width: 1500px;">
+                <table class="table table-bordered table-striped table-hover m-0 datatable" style="min-width: 1500px;">
                     <thead class="bg-light">
                         <tr>
                             <th rowspan="2" class="align-middle sticky-col customer-col">Customers</th>
@@ -144,6 +146,7 @@
     </div>
 @stop
 
+@include('partials.datatables-init', ['responsive' => false])
 @section('css')
     <style>
         .table-responsive {

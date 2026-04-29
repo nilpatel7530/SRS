@@ -30,12 +30,21 @@ class BrandingController extends Controller
      */
     public function update(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Reached BrandingController@update');
         $request->validate([
             'app_name' => 'required|string|max:100',
             'logo_img' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $this->brandingSkill->updateBranding($request->all());
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Branding settings updated successfully.',
+                'settings' => $this->brandingSkill->getSettings()
+            ]);
+        }
 
         return back()->with('success', 'Branding settings updated successfully.');
     }
