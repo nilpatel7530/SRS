@@ -99,3 +99,7 @@ Pint is configured for code style enforcement. To automatically format your PHP 
 ```bash
 ./vendor/bin/pint
 ```
+
+
+---
+*Made with Antigravity*
