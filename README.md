@@ -6,7 +6,7 @@ A modern, modular web application designed for managing and tracking solar energ
 
 ## 🏗️ Architecture: Custom Modular Structure
 
-Unlike traditional monolithic Laravel setups, **SRS** is built using a custom **Modular Architecture** located in `SRS_project/app/Modules`. Each module is encapsulated with its own models, migrations, views, and controllers, allowing for independent scaling and high maintainability.
+Unlike traditional monolithic Laravel setups, **SRS** is built using a custom **Modular Architecture** located in `app/Modules`. Each module is encapsulated with its own models, migrations, views, and controllers, allowing for independent scaling and high maintainability.
 
 ```
 app/Modules/
@@ -68,17 +68,12 @@ Modules are automatically registered via the `App\Providers\ModuleServiceProvide
 
 ### Installation Steps
 
-1. Navigate to the project directory:
-   ```bash
-   cd SRS_project
-   ```
-
-2. Run the automated setup script defined in `composer.json` (which installs Composer packages, runs migrations, copies `.env`, generates app keys, and runs npm installs):
+1. Install dependencies and run the automated setup script (which installs Composer packages, runs migrations, copies `.env`, generates app keys, and runs npm installs):
    ```bash
    npm run setup
    ```
 
-3. Configure your MySQL credentials in the generated `SRS_project/.env` file:
+2. Configure your MySQL credentials in the generated `.env` file:
    ```env
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
@@ -88,13 +83,13 @@ Modules are automatically registered via the `App\Providers\ModuleServiceProvide
    DB_PASSWORD=your_password
    ```
 
-4. Build and run the development environment:
+3. Build and run the development environment:
    ```bash
    # Run Vite, local server, queue listener, and Pail logs concurrently
    npm run dev
    ```
 
-5. Access the application in your browser at `http://localhost:8000`.
+4. Access the application in your browser at `http://localhost:8000`.
 
 ---
 
